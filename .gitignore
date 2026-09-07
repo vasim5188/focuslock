@@ -10,3 +10,10 @@
 .cxx
 /android-sdk/
 /gradle-dist/
+.env
+.env.*
+*.env
+credentials.json
+*.pem
+*.key
+.credentials
