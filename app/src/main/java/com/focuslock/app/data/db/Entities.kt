@@ -1,0 +1,63 @@
+package com.focuslock.app.data.db
+
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+
+/** An app the user has chosen to protect. Max 2 in the free MVP. */
+@Entity(tableName = "blocked_apps")
+data class BlockedApp(
+    @PrimaryKey val packageName: String,
+    val appLabel: String,
+    val addedAt: Long
+)
+
+/**
+ * A single focus schedule. MVP supports exactly one row (id = 1).
+ * [activeDays] is a 7-bit mask, bit 0 = Monday ... bit 6 = Sunday.
+ * Supports midnight-crossing windows (start > end).
+ */
+@Entity(tableName = "schedules")
+data class Schedule(
+    @PrimaryKey val id: Int = 1,
+    val startMinuteOfDay: Int,
+    val endMinuteOfDay: Int,
+    val activeDays: Int,
+    val isEnabled: Boolean
+)
+
+/** Global deliberate-unlock counter for a given local date (yyyy-MM-dd). */
+@Entity(tableName = "unlock_counters")
+data class UnlockCounter(
+    @PrimaryKey val dateKey: String,
+    val unlockCount: Int
+)
+
+/** Temporary access granted after a completed wait. */
+@Entity(tableName = "active_grants")
+data class ActiveGrant(
+    @PrimaryKey val packageName: String,
+    val expiresAt: Long
+)
+
+/**
+ * A wait deliberately started by the user. Only one is expected at a time.
+ * [startedAt] is wall-clock ms; [startedElapsed] is SystemClock.elapsedRealtime()
+ * used for tamper-resistant timing while the device has not rebooted.
+ */
+@Entity(tableName = "pending_waits")
+data class PendingWait(
+    @PrimaryKey val packageName: String,
+    val startedAt: Long,
+    val startedElapsed: Long,
+    val requiredSeconds: Int
+)
+
+/** Event log powering future statistics. Never used to shame the user. */
+@Entity(tableName = "event_logs")
+data class EventLog(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val type: String,
+    val packageName: String?,
+    val timestamp: Long,
+    val dateKey: String
+)

@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">Focus Lock</string>
+    <string name="accessibility_service_label">Focus Lock Protection</string>
+    <string name="accessibility_service_description">Focus Lock uses Accessibility Service to detect when a protected app is opened so it can show the lock screen. It reads which app is in the foreground and never collects the content of your screens.</string>
+
+    <string name="donate_url">https://buymeacoffee.com/focuslock</string>
+    <string name="privacy_url">https://focuslock.app/privacy</string>
+</resources>
