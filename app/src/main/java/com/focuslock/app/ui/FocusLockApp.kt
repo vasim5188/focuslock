@@ -11,6 +11,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.focuslock.app.data.SettingsDataStore
 import com.focuslock.app.ui.about.AboutScreen
+import com.focuslock.app.ui.about.PrivacyScreen
 import com.focuslock.app.ui.battery.BatteryScreen
 import com.focuslock.app.ui.home.HomeScreen
 import com.focuslock.app.ui.onboarding.OnboardingScreen
@@ -29,6 +30,7 @@ object Routes {
     const val SETTINGS = "settings"
     const val BATTERY = "battery"
     const val ABOUT = "about"
+    const val PRIVACY = "privacy"
 }
 
 @Composable
@@ -67,8 +69,7 @@ fun FocusLockApp(
                     navController.navigate(Routes.HOME) {
                         popUpTo(Routes.ONBOARDING) { inclusive = true }
                     }
-                },
-                onOpenBattery = { navController.navigate(Routes.BATTERY) }
+                }
             )
         }
 
@@ -94,10 +95,9 @@ fun FocusLockApp(
             SettingsScreen(
                 factory = factory,
                 onBack = { navController.popBackStack() },
-                onEditApps = { navController.navigate(Routes.PICKER) },
-                onEditSchedule = { navController.navigate(Routes.SCHEDULE) },
                 onPermissions = { navController.navigate("${Routes.PERMISSIONS}?onboarding=false") },
                 onBattery = { navController.navigate(Routes.BATTERY) },
+                onPrivacy = { navController.navigate(Routes.PRIVACY) },
                 onAbout = { navController.navigate(Routes.ABOUT) }
             )
         }
@@ -107,7 +107,10 @@ fun FocusLockApp(
         }
 
         composable(Routes.ABOUT) {
-            AboutScreen(factory = factory, onBack = { navController.popBackStack() })
+            AboutScreen(factory = factory, onBack = { navController.popBackStack() }, onPrivacy = { navController.navigate(Routes.PRIVACY) })
+        }
+        composable(Routes.PRIVACY) {
+            PrivacyScreen(onBack = { navController.popBackStack() })
         }
     }
 }

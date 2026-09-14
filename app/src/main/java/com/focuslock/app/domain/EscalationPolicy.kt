@@ -2,7 +2,7 @@ package com.focuslock.app.domain
 
 /**
  * Escalating wait system. The counter is GLOBAL across all protected apps and
- * represents deliberate decisions to bypass protection made *today*.
+ * counts completed waits that earned access *today*.
  *
  * | Deliberate unlock | Required wait |
  * | 1st  | 60s  |

@@ -22,8 +22,9 @@ class SettingsViewModel(
         settings.settings.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AppSettings())
 
     val versionName: String = BuildConfig.VERSION_NAME
+    // Keep support UI available for a later release, hidden on both screens for now.
+    val supportVisible: Boolean = false
     val donateUrl: String get() = getApplication<Application>().getString(R.string.donate_url)
-    val privacyUrl: String get() = getApplication<Application>().getString(R.string.privacy_url)
 
     fun setTheme(mode: ThemeMode) {
         viewModelScope.launch { settings.setThemeMode(mode) }

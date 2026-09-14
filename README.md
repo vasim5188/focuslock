@@ -36,8 +36,7 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 Focus Lock needs these permissions (explained in-app under Onboarding → Permissions):
 1. **Accessibility Service** — detect which app is in the foreground.
 2. **Display over other apps** — draw the lock screen.
-3. **Usage Access** — confirm the foreground app reliably.
-4. **Notifications** — the ongoing protection notification.
+3. **Notifications** — the ongoing protection notification.
 
 Also follow the **Battery optimization** guidance for your device (Xiaomi, Oppo,
 Realme, Vivo, Samsung, OnePlus, etc.) so the background service is not killed.
@@ -47,16 +46,19 @@ Realme, Vivo, Samsung, OnePlus, etc.) so the background service is not killed.
 2. Opening a protected app during the schedule shows the block screen — this is a
    `BLOCKED_ENCOUNTER` and does **not** increment any counter.
 3. **Go back** → `RESISTED`, counter unchanged.
-4. **Wait** → `UNLOCK_STARTED`, the daily counter increments exactly once and a
+4. **Wait** → `UNLOCK_STARTED`, the daily counter stays unchanged and a
    persistent timer starts. Required wait escalates: 60s → 3m → 7m → 15m → 30m+.
    The counter is **global** across all protected apps and resets at local midnight.
 5. **Cancel** a wait → `WAIT_CANCELLED`, counter is not touched.
-6. Wait completes → `UNLOCK_COMPLETED`, a 10-minute `ActiveGrant` is created.
+6. Wait completes → `UNLOCK_COMPLETED`, the counter increments once and a 10-minute `ActiveGrant` is created.
 7. Grant expires → `GRANT_EXPIRED`, the app is blocked again.
 
-Wait timers are persisted (timestamps + monotonic `elapsedRealtime`) so they
-survive leaving the screen, calls, process death and reboot, and resist clock
-manipulation.
+Wait timers are measured in monotonic time (`elapsedRealtime`) and checkpointed
+to the database every few seconds, so they survive leaving the screen, calls,
+process death and reboot without restarting. A reboot or a clock change breaks
+the boot-session anchor, which discards the unbanked delta rather than trusting
+it — so moving the clock can only ever cost progress, never grant it. Time with
+the device powered off does not count toward a wait.
 
 ## Project layout
 ```
@@ -77,9 +79,11 @@ Billing/Pro, rewarded ads, Deep Focus, statistics dashboard, cloud/login. These
 are stubbed behind interfaces/flags (e.g. `RewardedUnlockProvider`,
 `deepFocusActive`) so they can be added without reworking the runtime.
 
-## Note on this build environment
-This project was authored and compiled on an ARM64 Linux container. Android's
-`aapt2` ships x86_64-only, so the build uses `android.aapt2FromMavenOverride`
-pointing at a small qemu wrapper (`build-tools-wrapper/aapt2`). On a normal
-developer machine / Android Studio this is not needed — delete that line from
-`gradle.properties` if you build elsewhere.
+## Building
+Standard Android build — open in Android Studio, or from the command line with
+an Android SDK installed (`ANDROID_HOME` set):
+
+```
+./gradlew :app:assembleDebug     # build the APK
+./gradlew :app:testDebugUnitTest # run the unit tests
+```

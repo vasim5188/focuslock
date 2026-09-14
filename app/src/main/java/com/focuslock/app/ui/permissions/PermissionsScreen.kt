@@ -26,8 +26,13 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.AlertDialog
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -49,13 +54,48 @@ fun PermissionsScreen(
     factory: ViewModelProvider.Factory,
     isOnboarding: Boolean,
     onBack: () -> Unit,
-    onFinishOnboarding: () -> Unit,
-    onOpenBattery: () -> Unit
+    onFinishOnboarding: () -> Unit
 ) {
     val vm: PermissionsViewModel = viewModel(factory = factory)
     val state by vm.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
+    var showAccessibilityDisclosure by rememberSaveable { mutableStateOf(false) }
+    var showRestrictedHelp by rememberSaveable { mutableStateOf(false) }
+
+    if (showAccessibilityDisclosure) {
+        AlertDialog(
+            onDismissRequest = { showAccessibilityDisclosure = false },
+            title = { Text("Enable app detection") },
+            text = { Text("Focus Lock uses Accessibility to identify the app on your screen and block protected apps during your schedule. Android grants access to screen content; Focus Lock uses the app's identity, does not store screen text, and does not send this information off your device. You can turn access off in Android settings at any time.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showAccessibilityDisclosure = false
+                    context.startActivity(PermissionChecker.accessibilitySettingsIntent())
+                }) { Text("Agree and open settings") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showAccessibilityDisclosure = false }) { Text("Not now") }
+            }
+        )
+    }
+
+    if (showRestrictedHelp) {
+        AlertDialog(
+            onDismissRequest = { showRestrictedHelp = false },
+            title = { Text("Accessibility setting blocked?") },
+            text = { Text("Android may restrict Accessibility for apps installed from an APK.\n\n1. Open Focus Lock's App info.\n2. Look for the three-dot menu and Allow restricted settings. Confirm only if you trust this build.\n3. Return to Accessibility and enable Focus Lock.\n\nIf the menu is missing, first try enabling Focus Lock in Accessibility, then close and reopen App info. Available options vary by phone. The app cannot grant this access itself.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showRestrictedHelp = false
+                    context.startActivity(PermissionChecker.appInfoIntent(context))
+                }) { Text("Open App info") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showRestrictedHelp = false }) { Text("Close") }
+            }
+        )
+    }
 
     val notifLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -90,7 +130,13 @@ fun PermissionsScreen(
                 "Accessibility Service",
                 "Focus Lock uses Accessibility Service to detect when a protected app is opened so it can show the lock screen.",
                 state.accessibility
-            ) { context.startActivity(PermissionChecker.accessibilitySettingsIntent()) }
+            ) { showAccessibilityDisclosure = true }
+
+            if (!state.accessibility) {
+                TextButton(onClick = { showRestrictedHelp = true }) {
+                    Text("Setting blocked or unavailable?")
+                }
+            }
 
             Spacer(Modifier.size(12.dp))
             PermissionCard(
@@ -99,14 +145,6 @@ fun PermissionsScreen(
                 "Lets Focus Lock draw the lock screen on top of the app you opened.",
                 state.overlay
             ) { context.startActivity(PermissionChecker.overlaySettingsIntent(context)) }
-
-            Spacer(Modifier.size(12.dp))
-            PermissionCard(
-                Icons.Rounded.QueryStats,
-                "Usage Access",
-                "Helps Focus Lock reliably confirm which app is in the foreground.",
-                state.usageAccess
-            ) { context.startActivity(PermissionChecker.usageAccessSettingsIntent()) }
 
             Spacer(Modifier.size(12.dp))
             PermissionCard(
@@ -122,12 +160,7 @@ fun PermissionsScreen(
                 }
             }
 
-            Spacer(Modifier.size(20.dp))
-            OutlinedButton(
-                onClick = onOpenBattery,
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(24.dp)
-            ) { Text("Battery optimization guidance") }
+
 
             Spacer(Modifier.size(12.dp))
             Button(

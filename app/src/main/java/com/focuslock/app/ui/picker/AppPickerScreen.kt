@@ -57,7 +57,7 @@ fun AppPickerScreen(
             .fillMaxSize()
             .safeDrawingPadding()
     ) {
-        ScreenHeader(title = "Choose apps", onBack = onBack)
+        ScreenHeader(title = "Apps to block", onBack = onBack)
 
         Text(
             "You can protect up to ${vm.maxApps} apps in the free version.",

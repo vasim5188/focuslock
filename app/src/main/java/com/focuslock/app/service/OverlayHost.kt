@@ -46,7 +46,13 @@ private class OverlayLifecycleOwner : LifecycleOwner, ViewModelStoreOwner, Saved
  * Owns the single full-screen blocking overlay. All window operations run on
  * the main thread. Only one window ever exists (rapid launches never stack).
  */
-class OverlayHost(private val context: Context) {
+interface OverlayWindow {
+    val isShowing: Boolean
+    fun show(onBackPressed: () -> Unit, content: @Composable () -> Unit)
+    fun hide()
+}
+
+class OverlayHost(private val context: Context) : OverlayWindow {
 
     private val wm = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
     private val main = Handler(Looper.getMainLooper())
@@ -54,12 +60,17 @@ class OverlayHost(private val context: Context) {
     private var lifecycleOwner: OverlayLifecycleOwner? = null
     private var onBack: (() -> Unit)? = null
 
-    val isShowing: Boolean get() = composeView != null
+    override val isShowing: Boolean get() = composeView != null
 
-    fun show(onBackPressed: () -> Unit, content: @Composable () -> Unit) {
+    private fun runOnMain(action: () -> Unit) {
+        if (Looper.myLooper() == Looper.getMainLooper()) action()
+        else main.post { action() }
+    }
+
+    override fun show(onBackPressed: () -> Unit, content: @Composable () -> Unit) {
         onBack = onBackPressed
-        main.post {
-            if (composeView != null) return@post
+        runOnMain {
+            if (composeView != null) return@runOnMain
             val owner = OverlayLifecycleOwner().also { it.create() }
             val view = ComposeView(context).apply {
                 setViewTreeLifecycleOwner(owner)
@@ -78,21 +89,19 @@ class OverlayHost(private val context: Context) {
                 WindowManager.LayoutParams.MATCH_PARENT,
                 WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
                 WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED or
-                    WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
-                    WindowManager.LayoutParams.FLAG_LAYOUT_INSET_DECOR,
+                    WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
                 PixelFormat.TRANSLUCENT
             )
             runCatching {
                 wm.addView(view, params)
                 composeView = view
                 lifecycleOwner = owner
-                view.requestFocus()
             }
         }
     }
 
-    fun hide() {
-        main.post {
+    override fun hide() {
+        runOnMain {
             composeView?.let { v -> runCatching { wm.removeView(v) } }
             composeView = null
             lifecycleOwner?.destroy()

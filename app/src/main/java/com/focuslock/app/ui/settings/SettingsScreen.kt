@@ -4,6 +4,8 @@ import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -26,6 +28,8 @@ import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.RadioButton
+import androidx.compose.ui.semantics.Role
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -41,15 +45,15 @@ import com.focuslock.app.data.ThemeMode
 import com.focuslock.app.ui.components.FocusCard
 import com.focuslock.app.ui.components.NavRow
 import com.focuslock.app.ui.components.ScreenHeader
+import com.focuslock.app.util.PermissionChecker
 
 @Composable
 fun SettingsScreen(
     factory: ViewModelProvider.Factory,
     onBack: () -> Unit,
-    onEditApps: () -> Unit,
-    onEditSchedule: () -> Unit,
     onPermissions: () -> Unit,
     onBattery: () -> Unit,
+    onPrivacy: () -> Unit,
     onAbout: () -> Unit
 ) {
     val vm: SettingsViewModel = viewModel(factory = factory)
@@ -65,17 +69,11 @@ fun SettingsScreen(
         ScreenHeader(title = "Settings", onBack = onBack)
 
         Column(Modifier.padding(horizontal = 20.dp)) {
-            SectionLabel("Protection")
-            FocusCard {
-                NavRow(Icons.Rounded.Apps, "Blocked apps", null, "settings-apps", onEditApps)
-                NavRow(Icons.Rounded.Schedule, "Schedule", null, "settings-schedule", onEditSchedule)
-            }
-
-            Spacer(Modifier.size(20.dp))
             SectionLabel("Access")
             FocusCard {
-                NavRow(Icons.Rounded.Accessibility, "Permissions", "Usage, overlay, accessibility, notifications", "settings-permissions", onPermissions)
-                NavRow(Icons.Rounded.BatteryAlert, "Battery optimization", null, "settings-battery", onBattery)
+                NavRow(Icons.Rounded.Accessibility, "Permissions", "Accessibility, overlay and notifications", "settings-permissions", onPermissions)
+
+                NavRow(Icons.Rounded.BatteryAlert, "Background protection", "Allow background activity", "settings-battery", onBattery)
             }
 
             Spacer(Modifier.size(20.dp))
@@ -83,40 +81,45 @@ fun SettingsScreen(
             FocusCard {
                 Text("Theme", style = MaterialTheme.typography.titleMedium)
                 Spacer(Modifier.size(12.dp))
-                Row {
-                    ThemeChip("System", settings.themeMode == ThemeMode.SYSTEM) { vm.setTheme(ThemeMode.SYSTEM) }
-                    Spacer(Modifier.size(8.dp))
-                    ThemeChip("Light", settings.themeMode == ThemeMode.LIGHT) { vm.setTheme(ThemeMode.LIGHT) }
-                    Spacer(Modifier.size(8.dp))
-                    ThemeChip("Dark", settings.themeMode == ThemeMode.DARK) { vm.setTheme(ThemeMode.DARK) }
-                }
-            }
-
-            Spacer(Modifier.size(20.dp))
-            SectionLabel("Support")
-            FocusCard {
-                Text("Enjoying Focus Lock?", style = MaterialTheme.typography.titleMedium)
-                Spacer(Modifier.size(4.dp))
                 Text(
-                    "If the app has helped you spend less time on your phone, you can support development. Support does not unlock features or remove ads.",
+                    "Applies to the app and the blocking screen.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                Spacer(Modifier.size(12.dp))
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(MaterialTheme.colorScheme.tertiary.copy(alpha = 0.15f))
-                        .clickable {
-                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(vm.donateUrl)))
-                        }
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(Icons.Rounded.Coffee, contentDescription = null, tint = MaterialTheme.colorScheme.tertiary)
+                Column(Modifier.selectableGroup()) {
+                    ThemeOption("Use device setting", settings.themeMode == ThemeMode.SYSTEM) { vm.setTheme(ThemeMode.SYSTEM) }
+                    ThemeOption("Light", settings.themeMode == ThemeMode.LIGHT) { vm.setTheme(ThemeMode.LIGHT) }
+                    ThemeOption("Dark", settings.themeMode == ThemeMode.DARK) { vm.setTheme(ThemeMode.DARK) }
+                }
+            }
+
+            if (vm.supportVisible) {
+                Spacer(Modifier.size(20.dp))
+                SectionLabel("Support")
+                FocusCard {
+                    Text("Enjoying Focus Lock?", style = MaterialTheme.typography.titleMedium)
+                    Spacer(Modifier.size(4.dp))
+                    Text(
+                        "If the app has helped you spend less time on your phone, you can support development. Support does not unlock features or remove ads.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                     Spacer(Modifier.size(12.dp))
-                    Text("Buy me a coffee", style = MaterialTheme.typography.titleMedium)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(MaterialTheme.colorScheme.tertiary.copy(alpha = 0.15f))
+                            .clickable {
+                                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(vm.donateUrl)))
+                            }
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Rounded.Coffee, contentDescription = null, tint = MaterialTheme.colorScheme.tertiary)
+                        Spacer(Modifier.size(12.dp))
+                        Text("Buy me a coffee", style = MaterialTheme.typography.titleMedium)
+                    }
                 }
             }
 
@@ -128,7 +131,7 @@ fun SettingsScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(16.dp))
-                        .clickable { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(vm.privacyUrl))) }
+                        .clickable(onClick = onPrivacy)
                         .padding(vertical = 14.dp, horizontal = 4.dp)
                 ) {
                     Text("Privacy policy", style = MaterialTheme.typography.titleMedium)
@@ -151,19 +154,23 @@ private fun SectionLabel(text: String) {
 }
 
 @Composable
-private fun ThemeChip(label: String, selected: Boolean, onClick: () -> Unit) {
-    Box(
+private fun ThemeOption(label: String, selected: Boolean, onClick: () -> Unit) {
+    Row(
         modifier = Modifier
+            .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
-            .background(if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant)
-            .clickable(onClick = onClick)
-            .padding(horizontal = 20.dp, vertical = 12.dp)
+            .selectable(selected = selected, role = Role.RadioButton, onClick = onClick)
+            .padding(horizontal = 8.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
+        RadioButton(selected = selected, onClick = null)
+        Spacer(Modifier.size(12.dp))
         Text(
             label,
             style = MaterialTheme.typography.labelLarge,
             fontWeight = FontWeight.SemiBold,
-            color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.weight(1f)
         )
     }
 }

@@ -36,7 +36,8 @@ import com.focuslock.app.ui.settings.SettingsViewModel
 @Composable
 fun AboutScreen(
     factory: ViewModelProvider.Factory,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onPrivacy: () -> Unit
 ) {
     val vm: SettingsViewModel = viewModel(factory = factory)
     val context = LocalContext.current
@@ -72,19 +73,21 @@ fun AboutScreen(
                 )
             }
 
-            Spacer(Modifier.size(20.dp))
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(MaterialTheme.colorScheme.tertiary.copy(alpha = 0.15f))
-                    .clickable { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(vm.donateUrl))) }
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(Icons.Rounded.Coffee, contentDescription = null, tint = MaterialTheme.colorScheme.tertiary)
-                Spacer(Modifier.size(12.dp))
-                Text("Buy me a coffee", style = MaterialTheme.typography.titleMedium)
+            if (vm.supportVisible) {
+                Spacer(Modifier.size(20.dp))
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(MaterialTheme.colorScheme.tertiary.copy(alpha = 0.15f))
+                        .clickable { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(vm.donateUrl))) }
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Rounded.Coffee, contentDescription = null, tint = MaterialTheme.colorScheme.tertiary)
+                    Spacer(Modifier.size(12.dp))
+                    Text("Buy me a coffee", style = MaterialTheme.typography.titleMedium)
+                }
             }
 
             Spacer(Modifier.size(12.dp))
@@ -95,7 +98,7 @@ fun AboutScreen(
                 textAlign = TextAlign.Center,
                 modifier = Modifier
                     .clip(RoundedCornerShape(12.dp))
-                    .clickable { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(vm.privacyUrl))) }
+                    .clickable(onClick = onPrivacy)
                     .padding(12.dp)
             )
             Spacer(Modifier.size(24.dp))

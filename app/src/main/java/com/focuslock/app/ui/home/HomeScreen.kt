@@ -35,6 +35,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.focuslock.app.ui.components.FocusCard
 import com.focuslock.app.ui.components.NavRow
 import com.focuslock.app.ui.components.StatusDot
+import com.focuslock.app.domain.ScheduleEvaluator
+import com.focuslock.app.domain.Days
+import java.time.format.TextStyle
+import java.util.Locale
 
 @Composable
 fun HomeScreen(
@@ -121,7 +125,22 @@ fun HomeScreen(
                     ) {
                         Icon(Icons.Rounded.Lock, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                         Spacer(Modifier.size(12.dp))
-                        Text(app.appLabel, style = MaterialTheme.typography.bodyLarge)
+                        Column(Modifier.weight(1f)) {
+                            Text(app.appLabel, style = MaterialTheme.typography.bodyLarge)
+                            val schedule = state.schedule
+                            val scheduleLabel = when {
+                                schedule == null -> "No schedule set"
+                                !schedule.isEnabled -> "Schedule off"
+                                schedule.startMinuteOfDay == schedule.endMinuteOfDay || schedule.activeDays == 0 -> "No active hours"
+                                else -> {
+                                    val days = Days.orderedDays.filter { Days.isActive(schedule.activeDays, it) }
+                                        .joinToString(", ") { it.getDisplayName(TextStyle.SHORT, Locale.getDefault()) }
+                                    val overnight = if (schedule.startMinuteOfDay > schedule.endMinuteOfDay) " (ends next day)" else ""
+                                    "${ScheduleEvaluator.formatMinuteOfDay(schedule.startMinuteOfDay)} – ${ScheduleEvaluator.formatMinuteOfDay(schedule.endMinuteOfDay)}$overnight\n$days"
+                                }
+                            }
+                            Text(scheduleLabel, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
                     }
                 }
             }
@@ -139,7 +158,7 @@ fun HomeScreen(
         Spacer(Modifier.size(16.dp))
 
         FocusCard {
-            NavRow(Icons.Rounded.Apps, "Edit apps", "${state.blockedApps.size} of 2 protected", "home-edit-apps", onEditApps)
+            NavRow(Icons.Rounded.Apps, "Choose apps to block", "${state.blockedApps.size} of 2 selected", "home-edit-apps", onEditApps)
             NavRow(Icons.Rounded.Schedule, "Edit schedule", null, "home-edit-schedule", onEditSchedule)
             NavRow(Icons.Rounded.Settings, "Settings", null, "home-settings", onSettings)
         }

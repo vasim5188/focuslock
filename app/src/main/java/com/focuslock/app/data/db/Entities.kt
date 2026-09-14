@@ -41,15 +41,27 @@ data class ActiveGrant(
 
 /**
  * A wait deliberately started by the user. Only one is expected at a time.
- * [startedAt] is wall-clock ms; [startedElapsed] is SystemClock.elapsedRealtime()
- * used for tamper-resistant timing while the device has not rebooted.
+ *
+ * Progress is measured in *monotonic* time and checkpointed, so it survives a
+ * reboot without restarting and cannot be shortened by moving the clock:
+ *
+ * - [accumulatedSeconds] is the progress already banked at the last checkpoint.
+ * - [anchorElapsed] is SystemClock.elapsedRealtime() at that checkpoint; the
+ *   delta since then is added on top while the device is in the same boot session.
+ * - [bootEpochMillis] is (wall clock - elapsedRealtime) at that checkpoint. It
+ *   identifies the boot session: after a reboot it moves by roughly the lost
+ *   uptime, which tells us [anchorElapsed] is no longer comparable.
+ * - [startedAt] is wall-clock ms, kept for the abandoned-wait lifetime (§11)
+ *   and for recovery/debugging. It never shortens the wait.
  */
 @Entity(tableName = "pending_waits")
 data class PendingWait(
     @PrimaryKey val packageName: String,
     val startedAt: Long,
-    val startedElapsed: Long,
-    val requiredSeconds: Int
+    val requiredSeconds: Int,
+    val accumulatedSeconds: Int,
+    val anchorElapsed: Long,
+    val bootEpochMillis: Long
 )
 
 /** Event log powering future statistics. Never used to shame the user. */

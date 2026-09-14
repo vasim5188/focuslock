@@ -2,7 +2,7 @@ package com.focuslock.app.domain
 
 /**
  * The internal event model. Designed so the full statistics UI can be added
- * later without changing the runtime. Only [UNLOCK_STARTED] ever affects the
+ * later without changing the runtime. Only [UNLOCK_COMPLETED] ever affects the
  * daily counter.
  */
 enum class FocusEventType {
@@ -12,7 +12,7 @@ enum class FocusEventType {
     /** User saw the block screen and pressed "Go back". Counter unchanged. */
     RESISTED,
 
-    /** User deliberately chose "Wait". This is the ONLY event that increments the counter. */
+    /** User deliberately chose "Wait". Counter unchanged. */
     UNLOCK_STARTED,
 
     /** Required wait completed and temporary access was granted. */

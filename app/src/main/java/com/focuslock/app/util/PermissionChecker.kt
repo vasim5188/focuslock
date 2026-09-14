@@ -3,6 +3,7 @@ package com.focuslock.app.util
 import android.app.AppOpsManager
 import android.content.Context
 import android.content.Intent
+import android.content.ComponentName
 import android.net.Uri
 import android.os.Build
 import android.os.PowerManager
@@ -36,7 +37,7 @@ object PermissionChecker {
     }
 
     fun isAccessibilityEnabled(context: Context): Boolean {
-        val expected = "${context.packageName}/${FocusAccessibilityService::class.java.name}"
+        val expected = ComponentName(context, FocusAccessibilityService::class.java)
         val enabled = Settings.Secure.getString(
             context.contentResolver,
             Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
@@ -44,7 +45,7 @@ object PermissionChecker {
         val splitter = TextUtils.SimpleStringSplitter(':')
         splitter.setString(enabled)
         while (splitter.hasNext()) {
-            if (splitter.next().equals(expected, ignoreCase = true)) return true
+            if (ComponentName.unflattenFromString(splitter.next()) == expected) return true
         }
         return false
     }
@@ -74,6 +75,9 @@ object PermissionChecker {
 
     fun accessibilitySettingsIntent(): Intent =
         Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+
+    fun appInfoIntent(context: Context): Intent =
+        Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${context.packageName}"))
 
     fun notificationSettingsIntent(context: Context): Intent =
         Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)

@@ -11,6 +11,11 @@ import com.focuslock.app.domain.EscalationPolicy
 import com.focuslock.app.domain.FocusEventType
 import com.focuslock.app.domain.WaitCalculator
 import com.focuslock.app.util.TimeProvider
+import androidx.room.withTransaction
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.Flow
 
 const val MAX_FREE_APPS = 2
@@ -26,8 +31,13 @@ class FocusRepository(private val db: FocusLockDatabase) {
     val activeGrants: Flow<List<ActiveGrant>> = db.activeGrantDao().observeAll()
     val pendingWait: Flow<PendingWait?> = db.pendingWaitDao().observe()
 
-    fun observeTodayUnlockCount(): Flow<Int?> =
-        db.unlockCounterDao().observeCount(TimeProvider.todayKey())
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    fun observeTodayUnlockCount(): Flow<Int?> = flow {
+        while (true) {
+            emit(TimeProvider.todayKey())
+            delay(1_000)
+        }
+    }.distinctUntilChanged().flatMapLatest { db.unlockCounterDao().observeCount(it) }
 
     // ---- Blocked apps ---------------------------------------------------
 
@@ -36,13 +46,13 @@ class FocusRepository(private val db: FocusLockDatabase) {
     suspend fun blockedCount(): Int = db.blockedAppDao().count()
 
     /** Returns false if the free limit is already reached. */
-    suspend fun addBlockedApp(packageName: String, label: String): Boolean {
-        if (db.blockedAppDao().count() >= MAX_FREE_APPS) return false
+    suspend fun addBlockedApp(packageName: String, label: String): Boolean = db.withTransaction {
+        if (db.blockedAppDao().count() >= MAX_FREE_APPS) return@withTransaction false
         db.blockedAppDao().upsert(BlockedApp(packageName, label, TimeProvider.nowMillis()))
-        return true
+        return@withTransaction true
     }
 
-    suspend fun removeBlockedApp(packageName: String) {
+    suspend fun removeBlockedApp(packageName: String) = db.withTransaction {
         db.blockedAppDao().delete(packageName)
         db.activeGrantDao().delete(packageName)
         db.pendingWaitDao().delete(packageName)
@@ -59,10 +69,6 @@ class FocusRepository(private val db: FocusLockDatabase) {
     suspend fun todayUnlockCount(): Int =
         db.unlockCounterDao().getCount(TimeProvider.todayKey()) ?: 0
 
-    private suspend fun setTodayCount(count: Int) {
-        db.unlockCounterDao().upsert(UnlockCounter(TimeProvider.todayKey(), count))
-    }
-
     // ---- Grants ---------------------------------------------------------
 
     suspend fun hasValidGrant(packageName: String): Boolean {
@@ -71,7 +77,7 @@ class FocusRepository(private val db: FocusLockDatabase) {
     }
 
     /** Deletes grants that have expired, logging one GRANT_EXPIRED per app. */
-    suspend fun purgeExpiredGrants() {
+    suspend fun purgeExpiredGrants() = db.withTransaction {
         val now = TimeProvider.nowMillis()
         val expired = db.activeGrantDao().getAll().filter { it.expiresAt <= now }
         expired.forEach { logEvent(FocusEventType.GRANT_EXPIRED, it.packageName) }
@@ -102,34 +108,38 @@ class FocusRepository(private val db: FocusLockDatabase) {
         logEvent(FocusEventType.RESISTED, packageName)
 
     /**
-     * User deliberately pressed "Wait". This is the ONLY path that increments
-     * the daily counter. Creates the persistent PendingWait and returns the
+     * User deliberately pressed "Wait". Does not increment the counter until
+     * access is earned. Creates the persistent PendingWait and returns the
      * required wait in seconds (governed by the escalation level BEFORE this
      * unlock). Idempotent for an already-pending wait of the same app.
      */
-    suspend fun startWait(packageName: String): Int {
+    suspend fun startWait(packageName: String): Int = db.withTransaction {
         val existing = db.pendingWaitDao().get(packageName)
-        if (existing != null) return existing.requiredSeconds
+        if (existing != null) return@withTransaction existing.requiredSeconds
 
-        val countBefore = todayUnlockCount()
+        val dateKey = TimeProvider.todayKey()
+        val countBefore = db.unlockCounterDao().getCount(dateKey) ?: 0
         val required = EscalationPolicy.requiredWaitSeconds(countBefore)
 
+        val nowWall = TimeProvider.nowMillis()
+        val nowElapsed = TimeProvider.elapsedRealtime()
         db.pendingWaitDao().deleteAll() // only one wait at a time
         db.pendingWaitDao().upsert(
             PendingWait(
                 packageName = packageName,
-                startedAt = TimeProvider.nowMillis(),
-                startedElapsed = TimeProvider.elapsedRealtime(),
-                requiredSeconds = required
+                startedAt = nowWall,
+                requiredSeconds = required,
+                accumulatedSeconds = 0,
+                anchorElapsed = nowElapsed,
+                bootEpochMillis = WaitCalculator.bootEpoch(nowWall, nowElapsed)
             )
         )
-        setTodayCount(countBefore + 1) // UNLOCK_STARTED increments exactly once
         logEvent(FocusEventType.UNLOCK_STARTED, packageName)
-        return required
+        return@withTransaction required
     }
 
     /** User cancelled the wait. Do NOT touch the counter. */
-    suspend fun cancelWait(packageName: String) {
+    suspend fun cancelWait(packageName: String) = db.withTransaction {
         db.pendingWaitDao().delete(packageName)
         logEvent(FocusEventType.WAIT_CANCELLED, packageName)
     }
@@ -138,12 +148,14 @@ class FocusRepository(private val db: FocusLockDatabase) {
      * Completes the wait if enough time has elapsed, creating a 10-minute grant.
      * Returns true if a grant was created. Safe to call repeatedly.
      */
-    suspend fun tryCompleteWait(packageName: String): Boolean {
-        val wait = db.pendingWaitDao().get(packageName) ?: return false
+    suspend fun tryCompleteWait(packageName: String): Boolean = db.withTransaction {
+        val wait = db.pendingWaitDao().get(packageName) ?: return@withTransaction false
         val complete = WaitCalculator.isComplete(
             wait, TimeProvider.nowMillis(), TimeProvider.elapsedRealtime()
         )
-        if (!complete) return false
+        if (!complete) return@withTransaction false
+        val dateKey = TimeProvider.todayKey()
+        val count = db.unlockCounterDao().getCount(dateKey) ?: 0
         db.pendingWaitDao().delete(packageName)
         db.activeGrantDao().upsert(
             ActiveGrant(
@@ -151,12 +163,26 @@ class FocusRepository(private val db: FocusLockDatabase) {
                 expiresAt = TimeProvider.nowMillis() + EscalationPolicy.GRANT_DURATION_SECONDS * 1000L
             )
         )
+        db.unlockCounterDao().upsert(UnlockCounter(dateKey, count + 1))
         logEvent(FocusEventType.UNLOCK_COMPLETED, packageName)
-        return true
+        return@withTransaction true
+    }
+
+    /**
+     * Banks the wait's monotonic progress and re-anchors it to the current
+     * clocks, so a reboot resumes from banked progress instead of restarting.
+     * Cheap and idempotent; called periodically while a wait runs.
+     */
+    suspend fun checkpointWait() = db.withTransaction {
+        val wait = db.pendingWaitDao().getAny() ?: return@withTransaction
+        val updated = WaitCalculator.checkpoint(
+            wait, TimeProvider.nowMillis(), TimeProvider.elapsedRealtime()
+        )
+        if (updated != wait) db.pendingWaitDao().upsert(updated)
     }
 
     /** Discards waits that were started but abandoned past their max lifetime. */
-    suspend fun purgeAbandonedWaits() {
+    suspend fun purgeAbandonedWaits() = db.withTransaction {
         val now = TimeProvider.nowMillis()
         db.pendingWaitDao().getAny()?.let { wait ->
             if (WaitCalculator.isAbandoned(wait, now)) {

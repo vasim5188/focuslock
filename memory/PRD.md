@@ -31,8 +31,8 @@ expiry re-block, reboot recovery, event model). Defer billing/ads/DeepFocus/stat
 - [x] All source written, compiles clean
 - [x] Debug APK built in-env: app/build/outputs/apk/debug/app-debug.apk (~16 MB)
 - [x] 25 unit tests pass (schedule/midnight, escalation, wait persistence/reboot/abandon, block decision, days)
-- [x] Counter rules enforced in repository (Wait=+1 only; GoBack/Cancel/open=no change; global; midnight reset via dateKey)
-- [x] Persistent wait (wall + elapsedRealtime, reboot fallback, clock-tamper guard, 31-min abandon)
+- [x] Counter rules enforced in repository (Completed unlock=+1 only; Wait/GoBack/Cancel/open=no change; global; midnight reset via dateKey)
+- [x] Persistent wait (checkpointed monotonic progress; survives reboot, clock-tamper proof, 31-min abandon)
 - [x] 10-min grant + expiry re-block; single overlay (no stacking); call-aware; systemui-shade ignored
 - [x] Onboarding, permissions health, app picker (max 2, search, exclusions), schedule (midnight-crossing), home, settings, OEM battery guidance, about, buy-me-a-coffee (external browser), light/dark/system theme
 
@@ -43,7 +43,6 @@ expiry re-block, reboot recovery, event model). Defer billing/ads/DeepFocus/stat
   physical device/emulator as described in README.
 
 ## Build environment specifics (this container only)
-- ARM64; aapt2 is x86_64-only → android.aapt2FromMavenOverride=/app/build-tools-wrapper/aapt2 (qemu). Remove for normal machines.
 - SDK at /app/android-sdk, JDK 17, Gradle 8.9 wrapper committed.
 
 ## Backlog (reserved architecture, not built)
