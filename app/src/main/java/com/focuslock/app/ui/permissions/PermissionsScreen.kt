@@ -20,7 +20,6 @@ import androidx.compose.material.icons.rounded.Accessibility
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Layers
 import androidx.compose.material.icons.rounded.Notifications
-import androidx.compose.material.icons.rounded.QueryStats
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -123,14 +122,27 @@ fun PermissionsScreen(
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+            Spacer(Modifier.size(6.dp))
+            Text(
+                "Android controls this access. To remove a permission, tap Manage access and turn it off in Android settings.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
             Spacer(Modifier.size(16.dp))
 
             PermissionCard(
                 Icons.Rounded.Accessibility,
                 "Accessibility Service",
                 "Focus Lock uses Accessibility Service to detect when a protected app is opened so it can show the lock screen.",
-                state.accessibility
-            ) { showAccessibilityDisclosure = true }
+                state.accessibility,
+                setupHelp = "How to set: Accessibility → General → Downloaded apps → Focus Lock Protection, then turn it on."
+            ) {
+                if (state.accessibility) {
+                    context.startActivity(PermissionChecker.accessibilitySettingsIntent())
+                } else {
+                    showAccessibilityDisclosure = true
+                }
+            }
 
             if (!state.accessibility) {
                 TextButton(onClick = { showRestrictedHelp = true }) {
@@ -153,7 +165,9 @@ fun PermissionsScreen(
                 "Shows the ongoing notification that keeps protection running in the background.",
                 state.notifications
             ) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                if (state.notifications) {
+                    context.startActivity(PermissionChecker.notificationSettingsIntent(context))
+                } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                     notifLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                 } else {
                     context.startActivity(PermissionChecker.notificationSettingsIntent(context))
@@ -183,7 +197,8 @@ private fun PermissionCard(
     title: String,
     why: String,
     granted: Boolean,
-    onGrant: () -> Unit
+    setupHelp: String? = null,
+    onManage: () -> Unit
 ) {
     FocusCard {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -200,10 +215,18 @@ private fun PermissionCard(
         }
         Spacer(Modifier.size(8.dp))
         Text(why, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        if (!granted) {
-            Spacer(Modifier.size(12.dp))
-            Button(onClick = onGrant, shape = RoundedCornerShape(20.dp)) {
-                Text("Grant permission", style = MaterialTheme.typography.labelLarge)
+        if (setupHelp != null) {
+            Spacer(Modifier.size(8.dp))
+            Text(setupHelp, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Spacer(Modifier.size(12.dp))
+        if (granted) {
+            OutlinedButton(onClick = onManage, shape = RoundedCornerShape(20.dp)) {
+                Text("Manage access", style = MaterialTheme.typography.labelLarge)
+            }
+        } else {
+            Button(onClick = onManage, shape = RoundedCornerShape(20.dp)) {
+                Text("Set up", style = MaterialTheme.typography.labelLarge)
             }
         }
     }

@@ -24,6 +24,9 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -37,16 +40,35 @@ import com.focuslock.app.domain.Days
 import com.focuslock.app.domain.ScheduleEvaluator
 import com.focuslock.app.ui.components.FocusCard
 import com.focuslock.app.ui.components.ScreenHeader
+import com.focuslock.app.ui.components.ProtectionSetupDialog
+import com.focuslock.app.util.PermissionChecker
 import java.time.DayOfWeek
 
 @Composable
 fun ScheduleScreen(
     factory: ViewModelProvider.Factory,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onOpenPermissions: () -> Unit
 ) {
     val vm: ScheduleViewModel = viewModel(factory = factory)
     val state by vm.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    var missingPermissions by rememberSaveable { mutableStateOf<List<String>>(emptyList()) }
+
+    if (missingPermissions.isNotEmpty()) {
+        ProtectionSetupDialog(
+            savedMessage = "Your schedule was saved.",
+            missingPermissions = missingPermissions,
+            onOpenPermissions = {
+                missingPermissions = emptyList()
+                onOpenPermissions()
+            },
+            onDismiss = {
+                missingPermissions = emptyList()
+                onBack()
+            }
+        )
+    }
 
     fun openTimePicker(initial: Int, onPicked: (Int) -> Unit) {
         TimePickerDialog(
@@ -114,7 +136,14 @@ fun ScheduleScreen(
             Spacer(Modifier.size(24.dp))
 
             Button(
-                onClick = { vm.save(onBack) },
+                onClick = {
+                    vm.save {
+                        val missing = if (state.enabled) {
+                            PermissionChecker.missingProtectionPermissions(context)
+                        } else emptyList()
+                        if (missing.isEmpty()) onBack() else missingPermissions = missing
+                    }
+                },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(24.dp),
                 contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 16.dp)

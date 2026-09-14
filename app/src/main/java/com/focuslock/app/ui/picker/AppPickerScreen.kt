@@ -26,6 +26,9 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -34,16 +37,20 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.focuslock.app.ui.components.ScreenHeader
 import androidx.compose.foundation.Image
+import com.focuslock.app.ui.components.ProtectionSetupDialog
+import com.focuslock.app.util.PermissionChecker
 
 @Composable
 fun AppPickerScreen(
     factory: ViewModelProvider.Factory,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onOpenPermissions: () -> Unit
 ) {
     val vm: AppPickerViewModel = viewModel(factory = factory)
     val loading by vm.loading.collectAsStateWithLifecycle()
@@ -51,6 +58,20 @@ fun AppPickerScreen(
     val apps by vm.visibleApps.collectAsStateWithLifecycle()
     val selected by vm.selectedPackages.collectAsStateWithLifecycle()
     val limitHit by vm.limitHit.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    var missingPermissions by rememberSaveable { mutableStateOf<List<String>>(emptyList()) }
+
+    if (missingPermissions.isNotEmpty()) {
+        ProtectionSetupDialog(
+            savedMessage = "The app was added to your block list.",
+            missingPermissions = missingPermissions,
+            onOpenPermissions = {
+                missingPermissions = emptyList()
+                onOpenPermissions()
+            },
+            onDismiss = { missingPermissions = emptyList() }
+        )
+    }
 
     Column(
         modifier = Modifier
@@ -90,7 +111,11 @@ fun AppPickerScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(16.dp))
-                            .clickable { vm.toggle(app) }
+                            .clickable {
+                                vm.toggle(app) {
+                                    missingPermissions = PermissionChecker.missingProtectionPermissions(context)
+                                }
+                            }
                             .semantics { contentDescription = "${app.label}${if (isSelected) ", selected" else ""}" }
                             .padding(horizontal = 12.dp, vertical = 12.dp),
                         verticalAlignment = Alignment.CenterVertically

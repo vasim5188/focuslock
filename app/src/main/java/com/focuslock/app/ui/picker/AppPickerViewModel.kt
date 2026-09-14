@@ -53,7 +53,7 @@ class AppPickerViewModel(
 
     fun dismissLimit() { _limitHit.value = false }
 
-    fun toggle(app: InstalledApp) {
+    fun toggle(app: InstalledApp, onAdded: () -> Unit = {}) {
         viewModelScope.launch {
             val current = selectedPackages.value
             if (app.packageName in current) {
@@ -64,6 +64,7 @@ class AppPickerViewModel(
                     _limitHit.value = true
                 } else {
                     ProtectionServiceLauncher.start(getApplication())
+                    onAdded()
                 }
             }
         }

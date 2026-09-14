@@ -62,6 +62,11 @@ object PermissionChecker {
     fun protectionOperational(context: Context): Boolean =
         hasOverlay(context) && isAccessibilityEnabled(context)
 
+    fun missingProtectionPermissions(context: Context): List<String> = buildList {
+        if (!isAccessibilityEnabled(context)) add("Accessibility Service")
+        if (!hasOverlay(context)) add("Display over other apps")
+    }
+
     // ---- Intents to the relevant system settings screens ----------------
 
     fun overlaySettingsIntent(context: Context): Intent =

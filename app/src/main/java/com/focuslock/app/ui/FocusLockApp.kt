@@ -84,11 +84,19 @@ fun FocusLockApp(
         }
 
         composable(Routes.PICKER) {
-            AppPickerScreen(factory = factory, onBack = { navController.popBackStack() })
+            AppPickerScreen(
+                factory = factory,
+                onBack = { navController.popBackStack() },
+                onOpenPermissions = { navController.navigate("${Routes.PERMISSIONS}?onboarding=false") }
+            )
         }
 
         composable(Routes.SCHEDULE) {
-            ScheduleScreen(factory = factory, onBack = { navController.popBackStack() })
+            ScheduleScreen(
+                factory = factory,
+                onBack = { navController.popBackStack() },
+                onOpenPermissions = { navController.navigate("${Routes.PERMISSIONS}?onboarding=false") }
+            )
         }
 
         composable(Routes.SETTINGS) {
