@@ -1,6 +1,6 @@
 package com.focuslock.app.domain
 
-import com.focuslock.app.data.db.Schedule
+import com.focuslock.app.data.db.AppScheduleWindow
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -13,7 +13,7 @@ class ScheduleEvaluatorTest {
     private fun mon(h: Int, m: Int = 0) = LocalDateTime.of(2024, 1, 1, h, m)
     private fun sat(h: Int, m: Int = 0) = LocalDateTime.of(2024, 1, 6, h, m)
 
-    private val weekday9to6 = Schedule(1, 9 * 60, 18 * 60, Days.WEEKDAYS, true)
+    private val weekday9to6 = AppScheduleWindow(1, "youtube", 9 * 60, 18 * 60, Days.WEEKDAYS, true)
 
     @Test fun `active inside same-day window`() {
         assertTrue(ScheduleEvaluator.isActive(weekday9to6, mon(10, 15)))
@@ -37,13 +37,13 @@ class ScheduleEvaluatorTest {
     }
 
     @Test fun `midnight crossing - evening portion belongs to same day`() {
-        val night = Schedule(1, 22 * 60, 6 * 60, Days.ALL, true)
+        val night = AppScheduleWindow(1, "youtube", 22 * 60, 6 * 60, Days.ALL, true)
         assertTrue(ScheduleEvaluator.isActive(night, mon(23, 0)))
     }
 
     @Test fun `midnight crossing - early morning belongs to previous day`() {
         // Only Sunday active: Monday 05:00 should be active because it carries from Sunday night.
-        val sundayNight = Schedule(1, 22 * 60, 6 * 60, Days.SUN, true)
+        val sundayNight = AppScheduleWindow(1, "youtube", 22 * 60, 6 * 60, Days.SUN, true)
         assertTrue(ScheduleEvaluator.isActive(sundayNight, mon(5, 0)))
         // Monday 23:00 should NOT be active (Monday itself not in mask).
         assertFalse(ScheduleEvaluator.isActive(sundayNight, mon(23, 0)))
@@ -57,7 +57,7 @@ class ScheduleEvaluatorTest {
     }
 
     @Test fun `currentWindowEnd for midnight crossing rolls to next day`() {
-        val night = Schedule(1, 22 * 60, 6 * 60, Days.ALL, true)
+        val night = AppScheduleWindow(1, "youtube", 22 * 60, 6 * 60, Days.ALL, true)
         val end = ScheduleEvaluator.currentWindowEnd(night, mon(23, 0))!!
         assertEquals(6, end.hour)
         assertEquals(2, end.dayOfMonth) // Tuesday 06:00

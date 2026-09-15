@@ -4,7 +4,7 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.focuslock.app.data.db.BlockedApp
-import com.focuslock.app.data.db.Schedule
+import com.focuslock.app.data.db.AppScheduleWindow
 import com.focuslock.app.data.repository.FocusRepository
 import com.focuslock.app.domain.ScheduleEvaluator
 import com.focuslock.app.util.PermissionChecker
@@ -22,7 +22,7 @@ data class HomeUiState(
     val blockedApps: List<BlockedApp> = emptyList(),
     val unlockCount: Int = 0,
     val scheduleEndLabel: String? = null,
-    val schedule: Schedule? = null
+    val windows: List<AppScheduleWindow> = emptyList()
 )
 
 class HomeViewModel(
@@ -36,22 +36,22 @@ class HomeViewModel(
 
     val state: StateFlow<HomeUiState> = combine(
         repository.blockedApps,
-        repository.schedule,
+        repository.appScheduleWindows,
         repository.observeTodayUnlockCount(),
         ticker
-    ) { apps, schedule, count, _ ->
+    ) { apps, windows, count, _ ->
         val ctx = getApplication<Application>()
         val permsOk = PermissionChecker.protectionOperational(ctx)
         val now = TimeProvider.nowLocalDateTime()
-        val active = ScheduleEvaluator.isActive(schedule, now)
-        val end = ScheduleEvaluator.currentWindowEnd(schedule, now)
+        val active = apps.any { ScheduleEvaluator.isActive(windows, it.packageName, now) }
+        val end = apps.mapNotNull { ScheduleEvaluator.currentWindowEnd(windows, it.packageName, now) }.minOrNull()
         HomeUiState(
             protectionActive = active && permsOk,
             permissionsOk = permsOk,
             blockedApps = apps,
             unlockCount = count ?: 0,
             scheduleEndLabel = end?.let { ScheduleEvaluator.formatMinuteOfDay(it.hour * 60 + it.minute) },
-            schedule = schedule
+            windows = windows
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), HomeUiState())
 }

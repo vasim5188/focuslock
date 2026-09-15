@@ -6,7 +6,7 @@ import android.media.AudioManager
 import android.os.Build
 import com.focuslock.app.data.db.BlockedApp
 import com.focuslock.app.data.db.PendingWait
-import com.focuslock.app.data.db.Schedule
+import com.focuslock.app.data.db.AppScheduleWindow
 import com.focuslock.app.data.repository.FocusRepository
 import com.focuslock.app.domain.BlockDecision
 import com.focuslock.app.domain.BlockDecisionEngine
@@ -41,7 +41,7 @@ class ProtectionEngine(
     private var actionInProgress = false
 
     @Volatile private var protectedApps: List<BlockedApp> = emptyList()
-    @Volatile private var scheduleValue: Schedule? = null
+    @Volatile private var scheduleWindows: List<AppScheduleWindow> = emptyList()
     @Volatile private var grantsMap: Map<String, Long> = emptyMap()
     @Volatile private var pendingWaitValue: PendingWait? = null
     @Volatile private var currentForeground: String? = null
@@ -61,7 +61,7 @@ class ProtectionEngine(
         started = true
 
         scope.launch { repository.blockedApps.collect { protectedApps = it; reevaluate() } }
-        scope.launch { repository.schedule.collect { scheduleValue = it; reevaluate() } }
+        scope.launch { repository.appScheduleWindows.collect { scheduleWindows = it; reevaluate() } }
         scope.launch {
             repository.activeGrants.collect { grants ->
                 grantsMap = grants.associate { it.packageName to it.expiresAt }
@@ -75,7 +75,7 @@ class ProtectionEngine(
 
     private fun snapshot(): ProtectionSnapshot = ProtectionSnapshot(
         protectedPackages = protectedApps.map { it.packageName }.toSet(),
-        scheduleActive = ScheduleEvaluator.isActive(scheduleValue, TimeProvider.nowLocalDateTime()),
+        scheduleActive = currentForeground?.let { ScheduleEvaluator.isActive(scheduleWindows, it, TimeProvider.nowLocalDateTime()) } ?: false,
         grantedUntil = grantsMap,
         deepFocusActive = false
     )
@@ -176,7 +176,7 @@ class ProtectionEngine(
                 }
                 val count = repository.todayUnlockCount()
                 val endLabel = ScheduleEvaluator
-                    .currentWindowEnd(scheduleValue, TimeProvider.nowLocalDateTime())
+                    .currentWindowEnd(scheduleWindows, pkg, TimeProvider.nowLocalDateTime())
                     ?.let { ScheduleEvaluator.formatMinuteOfDay(it.hour * 60 + it.minute) }
                 OverlayState.Blocking(
                     packageName = pkg,
@@ -266,7 +266,7 @@ class ProtectionEngine(
                 repository.cancelWait(pkg)
                 val count = repository.todayUnlockCount()
                 val endLabel = ScheduleEvaluator
-                    .currentWindowEnd(scheduleValue, TimeProvider.nowLocalDateTime())
+                    .currentWindowEnd(scheduleWindows, pkg, TimeProvider.nowLocalDateTime())
                     ?.let { ScheduleEvaluator.formatMinuteOfDay(it.hour * 60 + it.minute) }
                 if (revision == foregroundRevision && _overlayState.value == state) {
                     _overlayState.value = OverlayState.Blocking(

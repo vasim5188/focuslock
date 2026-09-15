@@ -6,9 +6,13 @@ README and current source; source code remains authoritative when details drift.
 ## Current product
 
 - Native Kotlin/Jetpack Compose Android app, package `com.focuslock.app`.
-- Users select up to two apps to block and set a weekly time window. Windows
-  crossing midnight are supported. The home screen shows protected apps and
-  schedule timing; app and schedule editing are directly available there.
+- Users select up to two apps to block and set one weekly time window per app,
+  including windows crossing midnight. Home shows each app's window; app and
+  schedule editing are available there. Multiple windows are deferred until Pro.
+- Choose apps to block lists launchable apps and places selected apps first.
+  Android's package visibility filtered the list after `QUERY_ALL_PACKAGES` was
+  removed for Play preparation. A narrow MAIN/LAUNCHER `<queries>` declaration
+  fixed the missing apps. Individual scheduling did not cause that filtering.
 - During an active window, an Accessibility service detects the foreground app
   and an overlay shows a blocking screen. A foreground service and notification
   help keep protection running. OnePlus background-activity instructions live
@@ -28,8 +32,9 @@ README and current source; source code remains authoritative when details drift.
   user's phone is Accessibility > General > Downloaded apps > Focus Lock
   Protection. APK-installed builds may need App info > three-dot menu > Allow
   restricted settings; help for this is in the permission screen.
-- Privacy policy content is visible inside the app. Support/Buy me a coffee is
-  hidden for a future release.
+- Privacy policy content is visible inside the app from Settings > Information.
+  Its row matches About; the duplicate link on About was removed. Support/Buy
+  me a coffee is hidden for a future release.
 - Settings > Security has optional Lock Focus Lock. It uses the phone's existing
   biometric or PIN/pattern/password rather than storing a separate PIN. Changing
   the switch requires authentication. Opening the app prompts after it has been
@@ -38,8 +43,15 @@ README and current source; source code remains authoritative when details drift.
 
 ## Important implementation choices
 
-- The app is offline: Room stores block lists, schedule, waits, grants and
-  events; DataStore stores theme, onboarding, battery guidance and app-lock flag.
+- The app is offline: Room v6 stores block lists, one unique per-app window,
+  waits, grants and events; DataStore stores theme, onboarding, battery guidance
+  and app-lock flag. Old shared-schedule storage and all migration code were
+  removed at the user's request because the app is still in development.
+  Room uses destructive fallback for earlier development databases: updating
+  an existing debug install resets its Room data, including selected apps,
+  schedules, wait progress, grants and event history. Android permissions and
+  DataStore settings remain. Plan a deliberate migration strategy before a
+  production Play release, when user data must be retained.
 - `ProtectionEngine` evaluates accessibility events and a one-second tick.
   `BlockDecisionEngine` and `ScheduleEvaluator` hold the core decision rules.
 - `MainActivity` owns phone authentication via AndroidX BiometricPrompt. Android
@@ -51,8 +63,9 @@ README and current source; source code remains authoritative when details drift.
   immediately resumes; if it stays in the background, the app relocks.
 - Required blocking permissions are Accessibility and overlay. Notifications
   support background protection but are not part of the critical gate. Unused
-  Usage Access, broad package visibility and direct battery-exemption requests
-  were removed from the manifest for Play policy review. Android backup is
+  Usage Access, `QUERY_ALL_PACKAGES` and direct battery-exemption requests were
+  removed from the manifest for Play policy review. MAIN/LAUNCHER `<queries>`
+  now provides the app picker's limited package visibility. Android backup is
   disabled for app data.
 
 ## Build and device
@@ -62,11 +75,14 @@ README and current source; source code remains authoritative when details drift.
   and Build Tools 34/35/36. `local.properties` points to that SDK and is ignored
   by Git. The SDK itself and `gradle-dist` are also ignored.
 - Build/test: `gradlew.bat :app:assembleDebug :app:testDebugUnitTest --no-daemon`.
-  The latest app-lock flicker build and unit tests passed on 2026-09-15.
+  The clean single-window schema, scheduling and app-picker build and unit
+  tests passed on 2026-09-15.
 - Connected OnePlus phone serial: `7028cafc`. Debug APK installs with
   `android-sdk/platform-tools/adb.exe -s 7028cafc install -r
   app/build/outputs/apk/debug/app-debug.apk`. The latest build was installed
-  successfully, and the user confirmed the unlock-screen flash is fixed.
+  successfully, including the clean v6 development schema. Opening Room data
+  on this update resets old locally selected apps and schedules. The user
+  confirmed the unlock-screen flash is fixed and all apps appear in the picker.
 
 ## Google Play status and next work
 
@@ -92,20 +108,28 @@ README and current source; source code remains authoritative when details drift.
 
 ## Agreed feature roadmap — 2026-09-15
 
-These are the user's product decisions, not implemented features:
+These are the user's product decisions. The Free one-window rule is enforced;
+Pro and Billing are pending.
 
-1. Add app-specific schedules. Each app can have multiple time windows. Build
-   the database/runtime foundation first, then gate the expanded scheduling
-   controls behind Pro at release. Free remains limited to two apps and its
-   current scheduling capability until the exact free tier is finalized.
+1. App-specific schedules store one time window per app. Room v6 enforces that
+   with a unique package index. The runtime checks the foreground app's enabled
+   window. Home displays each app's window;
+   Schedule can set, edit, disable and remove it. Removal uses a trash icon by
+   the window row and a confirmation dialog. The agreed Free tier is two apps
+   with one window each. Pro will permit more apps and multiple windows per app
+   when Billing and a future schema update are implemented.
 2. Add Pro with monthly and yearly Google Play subscription base plans. Pro
    allows more blocked apps, multiple schedules per app and Child Protect.
-3. Do not require Google sign-in initially. Restore an active subscription by
+3. Do not require Google sign-in to use Free. Restore an active subscription by
    querying Google Play Billing on app startup/resume and via a visible Restore
-   purchases action. This depends on the user using the Google Play account
-   that bought the subscription. App configuration is local and will not
-   automatically return after uninstall unless a future backup/sync feature
-   is added.
+   purchases action, using the purchasing Google Play account. Google sign-in
+   could be optional when account and cloud backup features are built. Local
+   configuration will not return after uninstall until backup/sync is added.
+   The user proposed Supabase for a small subscription-verification backend and
+   possible later Google authentication and cloud backup. Supabase has not been
+   created or integrated. Google Play still processes subscription payments;
+   Supabase would verify purchase tokens with Google and store entitlements.
+   Keep core protection and schedules operational from local storage offline.
 4. Child Protect: a parent picks a list of apps and starts a ten-minute session
    in which those apps are accessible. When time is up, show a clear neutral
    time-limit message (do not say the phone is broken). Keep Child Protect

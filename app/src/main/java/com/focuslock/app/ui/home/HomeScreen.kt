@@ -127,17 +127,13 @@ fun HomeScreen(
                         Spacer(Modifier.size(12.dp))
                         Column(Modifier.weight(1f)) {
                             Text(app.appLabel, style = MaterialTheme.typography.bodyLarge)
-                            val schedule = state.schedule
-                            val scheduleLabel = when {
-                                schedule == null -> "No schedule set"
-                                !schedule.isEnabled -> "Schedule off"
-                                schedule.startMinuteOfDay == schedule.endMinuteOfDay || schedule.activeDays == 0 -> "No active hours"
-                                else -> {
-                                    val days = Days.orderedDays.filter { Days.isActive(schedule.activeDays, it) }
-                                        .joinToString(", ") { it.getDisplayName(TextStyle.SHORT, Locale.getDefault()) }
-                                    val overnight = if (schedule.startMinuteOfDay > schedule.endMinuteOfDay) " (ends next day)" else ""
-                                    "${ScheduleEvaluator.formatMinuteOfDay(schedule.startMinuteOfDay)} – ${ScheduleEvaluator.formatMinuteOfDay(schedule.endMinuteOfDay)}$overnight\n$days"
-                                }
+                            val window = state.windows.firstOrNull { it.packageName == app.packageName }
+                            val scheduleLabel = if (window == null) "No time window" else run {
+                                val days = Days.orderedDays.filter { Days.isActive(window.activeDays, it) }
+                                    .joinToString(", ") { it.getDisplayName(TextStyle.SHORT, Locale.getDefault()) }
+                                val nextDay = if (window.startMinuteOfDay > window.endMinuteOfDay) " · next day" else ""
+                                val off = if (!window.isEnabled) "Off · " else ""
+                                "$off${ScheduleEvaluator.formatMinuteOfDay(window.startMinuteOfDay)} – ${ScheduleEvaluator.formatMinuteOfDay(window.endMinuteOfDay)}$nextDay · $days"
                             }
                             Text(scheduleLabel, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }

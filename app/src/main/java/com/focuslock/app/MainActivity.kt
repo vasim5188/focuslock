@@ -11,7 +11,10 @@ import androidx.biometric.BiometricPrompt
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material3.Button
@@ -27,6 +30,7 @@ import androidx.compose.runtime.produceState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
@@ -130,12 +134,28 @@ class MainActivity : FragmentActivity() {
                             ) {
                                 if (promptInProgress || !promptAttempted) {
                                     CircularProgressIndicator()
-                                    Text("Opening phone authentication…")
+                                    Spacer(Modifier.size(12.dp))
+                                    Text("Opening phone authentication…", textAlign = TextAlign.Center)
                                 } else {
                                     Icon(Icons.Rounded.Lock, contentDescription = null)
-                                    Text("Focus Lock is locked", style = MaterialTheme.typography.headlineSmall)
-                                    Text("Use your phone's fingerprint, face unlock, PIN, pattern or password.")
-                                    lockError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                                    Spacer(Modifier.size(16.dp))
+                                    Text(
+                                        "Focus Lock is locked",
+                                        style = MaterialTheme.typography.headlineSmall,
+                                        textAlign = TextAlign.Center,
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                    Spacer(Modifier.size(12.dp))
+                                    Text(
+                                        "Use your phone's fingerprint, face unlock, PIN, pattern or password.",
+                                        textAlign = TextAlign.Center,
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                    lockError?.let {
+                                        Spacer(Modifier.size(8.dp))
+                                        Text(it, color = MaterialTheme.colorScheme.error, textAlign = TextAlign.Center)
+                                    }
+                                    Spacer(Modifier.size(20.dp))
                                     Button(onClick = { requestAuthentication(retry = true) }) {
                                         Text("Unlock Focus Lock")
                                     }

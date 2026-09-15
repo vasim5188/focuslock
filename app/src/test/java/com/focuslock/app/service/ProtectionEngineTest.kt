@@ -5,7 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.focuslock.app.data.db.FocusLockDatabase
-import com.focuslock.app.data.db.Schedule
+import com.focuslock.app.data.db.AppScheduleWindow
 import com.focuslock.app.data.repository.FocusRepository
 import com.focuslock.app.domain.Days
 import com.focuslock.app.util.TimeProvider
@@ -67,7 +67,7 @@ class ProtectionEngineTest {
 
     private suspend fun TestScope.engine(overlay: FakeOverlay): ProtectionEngine {
         repo.addBlockedApp(pkg, "Protected")
-        repo.saveSchedule(Schedule(1, 9 * 60, 18 * 60, Days.ALL, true))
+        repo.saveAppScheduleWindow(AppScheduleWindow(1, pkg, 9 * 60, 18 * 60, Days.ALL, true))
         return ProtectionEngine(context, repo, backgroundScope, overlay).also {
             it.start()
             runCurrent()
@@ -148,10 +148,10 @@ class ProtectionEngineTest {
         engine.onForegroundPackage(pkg)
         awaitCondition { overlay.isShowing }
         assertTrue(overlay.isShowing)
-        repo.saveSchedule(repo.getSchedule()!!.copy(isEnabled = false))
+        repo.saveAppScheduleWindow(AppScheduleWindow(1, pkg, 9 * 60, 18 * 60, Days.ALL, false))
         awaitCondition { !overlay.isShowing }
         assertFalse(overlay.isShowing)
-        repo.saveSchedule(repo.getSchedule()!!.copy(isEnabled = true))
+        repo.saveAppScheduleWindow(AppScheduleWindow(1, pkg, 9 * 60, 18 * 60, Days.ALL, true))
         awaitCondition { overlay.isShowing }
         assertTrue(overlay.isShowing)
         engine.onHostActivityResumed()

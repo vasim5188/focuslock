@@ -25,7 +25,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -36,8 +35,7 @@ import com.focuslock.app.ui.settings.SettingsViewModel
 @Composable
 fun AboutScreen(
     factory: ViewModelProvider.Factory,
-    onBack: () -> Unit,
-    onPrivacy: () -> Unit
+    onBack: () -> Unit
 ) {
     val vm: SettingsViewModel = viewModel(factory = factory)
     val context = LocalContext.current
@@ -90,17 +88,6 @@ fun AboutScreen(
                 }
             }
 
-            Spacer(Modifier.size(12.dp))
-            Text(
-                "Privacy policy",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.primary,
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .clip(RoundedCornerShape(12.dp))
-                    .clickable(onClick = onPrivacy)
-                    .padding(12.dp)
-            )
             Spacer(Modifier.size(24.dp))
         }
     }

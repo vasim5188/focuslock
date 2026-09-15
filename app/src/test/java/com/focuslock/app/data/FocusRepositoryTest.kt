@@ -3,6 +3,7 @@ package com.focuslock.app.data
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.focuslock.app.data.db.FocusLockDatabase
+import com.focuslock.app.data.db.AppScheduleWindow
 import com.focuslock.app.data.repository.FocusRepository
 import com.focuslock.app.data.repository.MAX_FREE_APPS
 import com.focuslock.app.domain.EscalationPolicy
@@ -51,6 +52,20 @@ class FocusRepositoryTest {
 
     private val instagram = "com.instagram.android"
     private val youtube = "com.google.android.youtube"
+
+    @Test
+    fun `only one saved time window exists for each app`() = runTest {
+        repo.saveAppScheduleWindow(AppScheduleWindow(packageName = youtube, startMinuteOfDay = 540,
+            endMinuteOfDay = 600, activeDays = 127, isEnabled = true))
+        repo.saveAppScheduleWindow(AppScheduleWindow(packageName = youtube, startMinuteOfDay = 780,
+            endMinuteOfDay = 840, activeDays = 127, isEnabled = true))
+        repo.saveAppScheduleWindow(AppScheduleWindow(packageName = instagram, startMinuteOfDay = 900,
+            endMinuteOfDay = 960, activeDays = 127, isEnabled = true))
+
+        val windows = repo.appScheduleWindows.first()
+        assertEquals(2, windows.size)
+        assertEquals(780, windows.single { it.packageName == youtube }.startMinuteOfDay)
+    }
 
     /** Wall clock and monotonic clock advance together unless a test says otherwise. */
     private class FakeClock(start: LocalDateTime) : TimeProvider.Source {

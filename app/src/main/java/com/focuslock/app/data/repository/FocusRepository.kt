@@ -1,11 +1,11 @@
 package com.focuslock.app.data.repository
 
 import com.focuslock.app.data.db.ActiveGrant
+import com.focuslock.app.data.db.AppScheduleWindow
 import com.focuslock.app.data.db.BlockedApp
 import com.focuslock.app.data.db.EventLog
 import com.focuslock.app.data.db.FocusLockDatabase
 import com.focuslock.app.data.db.PendingWait
-import com.focuslock.app.data.db.Schedule
 import com.focuslock.app.data.db.UnlockCounter
 import com.focuslock.app.domain.EscalationPolicy
 import com.focuslock.app.domain.FocusEventType
@@ -27,7 +27,7 @@ const val MAX_FREE_APPS = 2
 class FocusRepository(private val db: FocusLockDatabase) {
 
     val blockedApps: Flow<List<BlockedApp>> = db.blockedAppDao().observeAll()
-    val schedule: Flow<Schedule?> = db.scheduleDao().observe()
+    val appScheduleWindows: Flow<List<AppScheduleWindow>> = db.appScheduleWindowDao().observeAll()
     val activeGrants: Flow<List<ActiveGrant>> = db.activeGrantDao().observeAll()
     val pendingWait: Flow<PendingWait?> = db.pendingWaitDao().observe()
 
@@ -56,13 +56,14 @@ class FocusRepository(private val db: FocusLockDatabase) {
         db.blockedAppDao().delete(packageName)
         db.activeGrantDao().delete(packageName)
         db.pendingWaitDao().delete(packageName)
+        db.appScheduleWindowDao().deleteForPackage(packageName)
     }
 
     // ---- Schedule -------------------------------------------------------
 
-    suspend fun getSchedule(): Schedule? = db.scheduleDao().get()
+    suspend fun saveAppScheduleWindow(window: AppScheduleWindow) = db.appScheduleWindowDao().upsert(window)
 
-    suspend fun saveSchedule(schedule: Schedule) = db.scheduleDao().upsert(schedule.copy(id = 1))
+    suspend fun deleteAppScheduleWindow(id: Long) = db.appScheduleWindowDao().delete(id)
 
     // ---- Counter --------------------------------------------------------
 

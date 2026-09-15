@@ -25,6 +25,7 @@ import androidx.compose.material.icons.rounded.BatteryAlert
 import androidx.compose.material.icons.rounded.Coffee
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Lock
+import androidx.compose.material.icons.rounded.PrivacyTip
 import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -154,15 +155,7 @@ fun SettingsScreen(
             SectionLabel("Information")
             FocusCard {
                 NavRow(Icons.Rounded.Info, "About", "Version ${vm.versionName}", "settings-about", onAbout)
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(16.dp))
-                        .clickable(onClick = onPrivacy)
-                        .padding(vertical = 14.dp, horizontal = 4.dp)
-                ) {
-                    Text("Privacy policy", style = MaterialTheme.typography.titleMedium)
-                }
+                NavRow(Icons.Rounded.PrivacyTip, "Privacy policy", "Read inside Focus Lock", "settings-privacy", onPrivacy)
             }
 
             Spacer(Modifier.size(32.dp))

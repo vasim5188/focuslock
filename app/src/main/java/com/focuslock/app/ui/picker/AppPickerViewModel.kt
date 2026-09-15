@@ -37,9 +37,11 @@ class AppPickerViewModel(
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
 
     val visibleApps: StateFlow<List<InstalledApp>> =
-        combine(allApps, _query) { apps, q ->
-            if (q.isBlank()) apps
-            else apps.filter { it.label.contains(q, ignoreCase = true) }
+        combine(allApps, _query, selectedPackages) { apps, q, selected ->
+            apps.asSequence()
+                .filter { q.isBlank() || it.label.contains(q, ignoreCase = true) || it.packageName.contains(q, ignoreCase = true) }
+                .sortedWith(compareBy<InstalledApp> { it.packageName !in selected }.thenBy { it.label.lowercase() })
+                .toList()
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     init {

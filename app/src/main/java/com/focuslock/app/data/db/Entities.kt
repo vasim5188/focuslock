@@ -2,6 +2,7 @@ package com.focuslock.app.data.db
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import androidx.room.Index
 
 /** An app the user has chosen to protect. Max 2 in the free MVP. */
 @Entity(tableName = "blocked_apps")
@@ -11,14 +12,11 @@ data class BlockedApp(
     val addedAt: Long
 )
 
-/**
- * A single focus schedule. MVP supports exactly one row (id = 1).
- * [activeDays] is a 7-bit mask, bit 0 = Monday ... bit 6 = Sunday.
- * Supports midnight-crossing windows (start > end).
- */
-@Entity(tableName = "schedules")
-data class Schedule(
-    @PrimaryKey val id: Int = 1,
+/** One weekly time window per app. Days use a Monday-first 7-bit mask. */
+@Entity(tableName = "app_schedule_windows", indices = [Index(value = ["packageName"], unique = true)])
+data class AppScheduleWindow(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val packageName: String,
     val startMinuteOfDay: Int,
     val endMinuteOfDay: Int,
     val activeDays: Int,

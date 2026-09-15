@@ -25,15 +25,18 @@ interface BlockedAppDao {
 }
 
 @Dao
-interface ScheduleDao {
-    @Query("SELECT * FROM schedules WHERE id = 1 LIMIT 1")
-    fun observe(): Flow<Schedule?>
-
-    @Query("SELECT * FROM schedules WHERE id = 1 LIMIT 1")
-    suspend fun get(): Schedule?
+interface AppScheduleWindowDao {
+    @Query("SELECT * FROM app_schedule_windows ORDER BY packageName, startMinuteOfDay, id")
+    fun observeAll(): Flow<List<AppScheduleWindow>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun upsert(schedule: Schedule)
+    suspend fun upsert(window: AppScheduleWindow)
+
+    @Query("DELETE FROM app_schedule_windows WHERE id = :id")
+    suspend fun delete(id: Long)
+
+    @Query("DELETE FROM app_schedule_windows WHERE packageName = :pkg")
+    suspend fun deleteForPackage(pkg: String)
 }
 
 @Dao

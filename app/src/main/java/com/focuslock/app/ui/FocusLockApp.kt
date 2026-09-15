@@ -121,7 +121,7 @@ fun FocusLockApp(
         }
 
         composable(Routes.ABOUT) {
-            AboutScreen(factory = factory, onBack = { navController.popBackStack() }, onPrivacy = { navController.navigate(Routes.PRIVACY) })
+            AboutScreen(factory = factory, onBack = { navController.popBackStack() })
         }
         composable(Routes.PRIVACY) {
             PrivacyScreen(onBack = { navController.popBackStack() })

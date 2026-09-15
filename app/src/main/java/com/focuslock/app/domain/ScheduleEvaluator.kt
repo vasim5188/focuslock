@@ -1,54 +1,42 @@
 package com.focuslock.app.domain
 
-import com.focuslock.app.data.db.Schedule
+import com.focuslock.app.data.db.AppScheduleWindow
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
-/**
- * Pure schedule math. Handles same-day and midnight-crossing windows.
- * All calculations use local date/time supplied by the caller.
- */
+/** Local weekly schedule math for each selected app. End times are exclusive. */
 object ScheduleEvaluator {
-
     private val timeFmt = DateTimeFormatter.ofPattern("h:mm a")
 
-    /** Is [now] inside the enabled schedule window? */
-    fun isActive(schedule: Schedule?, now: LocalDateTime): Boolean {
-        if (schedule == null || !schedule.isEnabled) return false
-        val start = schedule.startMinuteOfDay
-        val end = schedule.endMinuteOfDay
+    fun isActive(windows: List<AppScheduleWindow>, packageName: String, now: LocalDateTime): Boolean =
+        isActive(windows.firstOrNull { it.packageName == packageName }, now)
+
+    fun currentWindowEnd(windows: List<AppScheduleWindow>, packageName: String, now: LocalDateTime): LocalDateTime? =
+        currentWindowEnd(windows.firstOrNull { it.packageName == packageName }, now)
+
+    fun isActive(window: AppScheduleWindow?, now: LocalDateTime): Boolean {
+        if (window == null || !window.isEnabled) return false
+        val start = window.startMinuteOfDay
+        val end = window.endMinuteOfDay
         val minute = now.hour * 60 + now.minute
         val today = now.dayOfWeek
-        val yesterday = today.minus(1)
 
         return when {
-            // Zero-length / equal -> treat as inactive.
             start == end -> false
-
-            // Same-day window, e.g. 09:00 -> 18:00
-            start < end ->
-                Days.isActive(schedule.activeDays, today) && minute >= start && minute < end
-
-            // Midnight-crossing window, e.g. 22:00 -> 06:00
-            else -> {
-                val inTodayPortion = minute >= start && Days.isActive(schedule.activeDays, today)
-                val inCarryPortion = minute < end && Days.isActive(schedule.activeDays, yesterday)
-                inTodayPortion || inCarryPortion
-            }
+            start < end -> Days.isActive(window.activeDays, today) && minute >= start && minute < end
+            else -> (minute >= start && Days.isActive(window.activeDays, today)) ||
+                (minute < end && Days.isActive(window.activeDays, today.minus(1)))
         }
     }
 
-    /** Wall-clock LocalDateTime at which the currently-active window ends. Null if not active. */
-    fun currentWindowEnd(schedule: Schedule?, now: LocalDateTime): LocalDateTime? {
-        if (!isActive(schedule, now)) return null
-        val end = schedule!!.endMinuteOfDay
-        val minute = now.hour * 60 + now.minute
-        val endDate = if (schedule.startMinuteOfDay < end) {
-            // same day
-            now.toLocalDate()
-        } else {
-            // midnight crossing: if we're still before end, it ends today; else tomorrow
-            if (minute < end) now.toLocalDate() else now.toLocalDate().plusDays(1)
+    fun currentWindowEnd(window: AppScheduleWindow?, now: LocalDateTime): LocalDateTime? {
+        if (!isActive(window, now)) return null
+        val selected = window!!
+        val end = selected.endMinuteOfDay
+        val endDate = when {
+            selected.startMinuteOfDay < end -> now.toLocalDate()
+            now.hour * 60 + now.minute < end -> now.toLocalDate()
+            else -> now.toLocalDate().plusDays(1)
         }
         return endDate.atStartOfDay().plusMinutes(end.toLong())
     }
