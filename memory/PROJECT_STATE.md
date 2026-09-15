@@ -109,8 +109,9 @@ These are the user's product decisions, not implemented features:
 4. Child Protect: a parent picks a list of apps and starts a ten-minute session
    in which those apps are accessible. When time is up, show a clear neutral
    time-limit message (do not say the phone is broken). Keep Child Protect
-   active until a parent explicitly removes it. Parent actions should require
-   phone authentication. Define and test behavior across app backgrounding,
+   active until a parent explicitly removes it. Parent actions should use the
+   phone's existing authentication; the user does not want a separate parent
+   PIN. Define and test behavior across app backgrounding,
    reboot, permission revocation and device limitations. Accessibility/overlay
    can block selected apps but cannot guarantee control of the whole phone.
 5. Friends should test the app through Google Play's Internal testing track
