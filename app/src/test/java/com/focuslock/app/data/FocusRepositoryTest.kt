@@ -42,7 +42,7 @@ import java.time.ZoneId
 @RunWith(RobolectricTestRunner::class)
 // A plain Application: the real one starts a ProtectionEngine whose Room flow
 // collectors would outlive each test and hit a closed database.
-@Config(application = android.app.Application::class)
+@Config(application = android.app.Application::class, sdk = [28])
 class FocusRepositoryTest {
 
     private lateinit var db: FocusLockDatabase

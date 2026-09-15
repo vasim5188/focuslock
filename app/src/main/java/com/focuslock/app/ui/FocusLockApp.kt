@@ -37,7 +37,10 @@ object Routes {
 fun FocusLockApp(
     factory: ViewModelProvider.Factory,
     settingsStore: SettingsDataStore,
-    onboardingComplete: Boolean
+    onboardingComplete: Boolean,
+    appLockEnabled: Boolean,
+    appLockError: String?,
+    onChangeAppLock: (Boolean) -> Unit
 ) {
     val navController = rememberNavController()
     val scope = rememberCoroutineScope()
@@ -106,7 +109,10 @@ fun FocusLockApp(
                 onPermissions = { navController.navigate("${Routes.PERMISSIONS}?onboarding=false") },
                 onBattery = { navController.navigate(Routes.BATTERY) },
                 onPrivacy = { navController.navigate(Routes.PRIVACY) },
-                onAbout = { navController.navigate(Routes.ABOUT) }
+                onAbout = { navController.navigate(Routes.ABOUT) },
+                appLockEnabled = appLockEnabled,
+                appLockError = appLockError,
+                onChangeAppLock = onChangeAppLock
             )
         }
 

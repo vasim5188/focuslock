@@ -24,11 +24,13 @@ import androidx.compose.material.icons.rounded.Apps
 import androidx.compose.material.icons.rounded.BatteryAlert
 import androidx.compose.material.icons.rounded.Coffee
 import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Switch
 import androidx.compose.ui.semantics.Role
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -54,7 +56,10 @@ fun SettingsScreen(
     onPermissions: () -> Unit,
     onBattery: () -> Unit,
     onPrivacy: () -> Unit,
-    onAbout: () -> Unit
+    onAbout: () -> Unit,
+    appLockEnabled: Boolean,
+    appLockError: String?,
+    onChangeAppLock: (Boolean) -> Unit
 ) {
     val vm: SettingsViewModel = viewModel(factory = factory)
     val settings by vm.state.collectAsStateWithLifecycle()
@@ -74,6 +79,28 @@ fun SettingsScreen(
                 NavRow(Icons.Rounded.Accessibility, "Permissions", "Accessibility, overlay and notifications", "settings-permissions", onPermissions)
 
                 NavRow(Icons.Rounded.BatteryAlert, "Background protection", "Allow background activity", "settings-battery", onBattery)
+            }
+
+            Spacer(Modifier.size(20.dp))
+            SectionLabel("Security")
+            FocusCard {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Rounded.Lock, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    Spacer(Modifier.size(12.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text("Lock Focus Lock", style = MaterialTheme.typography.titleMedium)
+                        Text(
+                            "Ask for your phone's fingerprint, face unlock or screen lock when opening this app.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Switch(checked = appLockEnabled, onCheckedChange = onChangeAppLock)
+                }
+                appLockError?.let {
+                    Spacer(Modifier.size(8.dp))
+                    Text(it, color = MaterialTheme.colorScheme.error)
+                }
             }
 
             Spacer(Modifier.size(20.dp))

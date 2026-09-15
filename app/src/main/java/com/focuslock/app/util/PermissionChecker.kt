@@ -1,12 +1,9 @@
 package com.focuslock.app.util
 
-import android.app.AppOpsManager
 import android.content.Context
 import android.content.Intent
 import android.content.ComponentName
 import android.net.Uri
-import android.os.Build
-import android.os.PowerManager
 import android.provider.Settings
 import android.text.TextUtils
 import androidx.core.app.NotificationManagerCompat
@@ -16,25 +13,6 @@ import com.focuslock.app.service.FocusAccessibilityService
 object PermissionChecker {
 
     fun hasOverlay(context: Context): Boolean = Settings.canDrawOverlays(context)
-
-    fun hasUsageAccess(context: Context): Boolean {
-        val appOps = context.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
-        val mode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            appOps.unsafeCheckOpNoThrow(
-                AppOpsManager.OPSTR_GET_USAGE_STATS,
-                android.os.Process.myUid(),
-                context.packageName
-            )
-        } else {
-            @Suppress("DEPRECATION")
-            appOps.checkOpNoThrow(
-                AppOpsManager.OPSTR_GET_USAGE_STATS,
-                android.os.Process.myUid(),
-                context.packageName
-            )
-        }
-        return mode == AppOpsManager.MODE_ALLOWED
-    }
 
     fun isAccessibilityEnabled(context: Context): Boolean {
         val expected = ComponentName(context, FocusAccessibilityService::class.java)
@@ -53,11 +31,6 @@ object PermissionChecker {
     fun hasNotifications(context: Context): Boolean =
         NotificationManagerCompat.from(context).areNotificationsEnabled()
 
-    fun isIgnoringBatteryOptimizations(context: Context): Boolean {
-        val pm = context.getSystemService(Context.POWER_SERVICE) as PowerManager
-        return pm.isIgnoringBatteryOptimizations(context.packageName)
-    }
-
     /** The minimum set required for blocking to actually function. */
     fun protectionOperational(context: Context): Boolean =
         hasOverlay(context) && isAccessibilityEnabled(context)
@@ -75,9 +48,6 @@ object PermissionChecker {
             Uri.parse("package:${context.packageName}")
         )
 
-    fun usageAccessSettingsIntent(): Intent =
-        Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)
-
     fun accessibilitySettingsIntent(): Intent =
         Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
 
@@ -88,9 +58,4 @@ object PermissionChecker {
         Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
             .putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
 
-    fun batteryOptimizationIntent(context: Context): Intent =
-        Intent(
-            Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
-            Uri.parse("package:${context.packageName}")
-        )
 }

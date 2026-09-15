@@ -14,7 +14,7 @@ app and a `SYSTEM_ALERT_WINDOW` overlay to block it. Nothing is faked.
 - ViewModel + Kotlin Coroutines / Flow
 - Room (local database) + DataStore (preferences)
 - AccessibilityService, Foreground Service, BroadcastReceivers, Notifications
-- minSdk 26, targetSdk 35, AGP 8.6, Gradle 8.9
+- minSdk 26, targetSdk 36, AGP 8.10.1, Gradle 8.11.1
 - No backend, no account, no analytics — 100% offline core
 
 ## Build
@@ -40,6 +40,14 @@ Focus Lock needs these permissions (explained in-app under Onboarding → Permis
 
 Also follow the **Battery optimization** guidance for your device (Xiaomi, Oppo,
 Realme, Vivo, Samsung, OnePlus, etc.) so the background service is not killed.
+
+Settings also offers an optional **Lock Focus Lock** switch. It asks for the
+phone's own biometric or screen-lock credential when reopening Focus Lock and
+requires authentication before changing the switch. Android 8–10 uses the
+device credential; Android 11+ can use biometric or device credential.
+
+See [memory/PROJECT_STATE.md](memory/PROJECT_STATE.md) for the current product
+behavior, implementation decisions, release status, and next-work checklist.
 
 ## How the core loop works
 1. You protect up to 2 apps and set a schedule (supports midnight-crossing windows).

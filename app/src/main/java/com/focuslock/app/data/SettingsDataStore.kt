@@ -15,7 +15,8 @@ enum class ThemeMode { SYSTEM, LIGHT, DARK }
 data class AppSettings(
     val onboardingComplete: Boolean = false,
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
-    val batteryGuidanceDone: Boolean = false
+    val batteryGuidanceDone: Boolean = false,
+    val appLockEnabled: Boolean = false
 )
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "focus_lock_settings")
@@ -26,6 +27,7 @@ class SettingsDataStore(private val context: Context) {
         val ONBOARDING = booleanPreferencesKey("onboarding_complete")
         val THEME = stringPreferencesKey("theme_mode")
         val BATTERY = booleanPreferencesKey("battery_guidance_done")
+        val APP_LOCK = booleanPreferencesKey("app_lock_enabled")
     }
 
     val settings: Flow<AppSettings> = context.dataStore.data.map { p ->
@@ -33,7 +35,8 @@ class SettingsDataStore(private val context: Context) {
             onboardingComplete = p[Keys.ONBOARDING] ?: false,
             themeMode = runCatching { ThemeMode.valueOf(p[Keys.THEME] ?: "SYSTEM") }
                 .getOrDefault(ThemeMode.SYSTEM),
-            batteryGuidanceDone = p[Keys.BATTERY] ?: false
+            batteryGuidanceDone = p[Keys.BATTERY] ?: false,
+            appLockEnabled = p[Keys.APP_LOCK] ?: false
         )
     }
 
@@ -47,5 +50,9 @@ class SettingsDataStore(private val context: Context) {
 
     suspend fun setBatteryGuidanceDone(value: Boolean) {
         context.dataStore.edit { it[Keys.BATTERY] = value }
+    }
+
+    suspend fun setAppLockEnabled(value: Boolean) {
+        context.dataStore.edit { it[Keys.APP_LOCK] = value }
     }
 }
