@@ -89,3 +89,30 @@ README and current source; source code remains authoritative when details drift.
   versionCode for every subsequent Play upload. A Play-signed install may use a
   different signing certificate from the existing USB debug APK, so testers
   might have to uninstall the debug build before their first Play installation.
+
+## Agreed feature roadmap — 2026-09-15
+
+These are the user's product decisions, not implemented features:
+
+1. Add app-specific schedules. Each app can have multiple time windows. Build
+   the database/runtime foundation first, then gate the expanded scheduling
+   controls behind Pro at release. Free remains limited to two apps and its
+   current scheduling capability until the exact free tier is finalized.
+2. Add Pro with monthly and yearly Google Play subscription base plans. Pro
+   allows more blocked apps, multiple schedules per app and Child Protect.
+3. Do not require Google sign-in initially. Restore an active subscription by
+   querying Google Play Billing on app startup/resume and via a visible Restore
+   purchases action. This depends on the user using the Google Play account
+   that bought the subscription. App configuration is local and will not
+   automatically return after uninstall unless a future backup/sync feature
+   is added.
+4. Child Protect: a parent picks a list of apps and starts a ten-minute session
+   in which those apps are accessible. When time is up, show a clear neutral
+   time-limit message (do not say the phone is broken). Keep Child Protect
+   active until a parent explicitly removes it. Parent actions should require
+   phone authentication. Define and test behavior across app backgrounding,
+   reboot, permission revocation and device limitations. Accessibility/overlay
+   can block selected apps but cannot guarantee control of the whole phone.
+5. Friends should test the app through Google Play's Internal testing track
+   before a wider release. Subscription testers should also be Play license
+   testers so test purchase methods do not charge them.
