@@ -1,15 +1,29 @@
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("com.google.devtools.ksp")
 }
 
+// Release signing credentials live outside Git. See keystore.properties.sample.
+val keystorePropertiesFile = rootProject.file("keystore.properties")
+val keystoreProperties = Properties().apply {
+    if (keystorePropertiesFile.exists()) {
+        FileInputStream(keystorePropertiesFile).use { load(it) }
+    }
+}
+val hasReleaseSigning = keystorePropertiesFile.exists()
+
 android {
     namespace = "com.focuslock.app"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.focuslock.app"
+        // Play package name. Deliberately differs from the `namespace` above,
+        // which stays com.focuslock.app as the internal Kotlin package.
+        applicationId = "com.vasimakram.focuslock"
         minSdk = 26
         targetSdk = 36
         versionCode = 1
@@ -19,9 +33,24 @@ android {
         vectorDrawables { useSupportLibrary = true }
     }
 
+    signingConfigs {
+        create("release") {
+            if (hasReleaseSigning) {
+                storeFile = rootProject.file(keystoreProperties.getProperty("storeFile"))
+                storePassword = keystoreProperties.getProperty("storePassword")
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            isMinifyEnabled = false
+            // Without keystore.properties the build stays unsigned rather than failing,
+            // so checkouts without the credentials can still compile.
+            signingConfig = if (hasReleaseSigning) signingConfigs.getByName("release") else null
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -53,11 +82,21 @@ android {
         }
     }
 
+    sourceSets {
+        // Lets Room migration tests read the exported schema JSON.
+        getByName("androidTest").assets.srcDir("$projectDir/schemas")
+    }
+
     testOptions {
         unitTests.isReturnDefaultValues = true
         // Robolectric needs real resources/manifest to run Room on the JVM.
         unitTests.isIncludeAndroidResources = true
     }
+}
+
+// Exported schemas are the baseline every future Room migration is written against.
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
 }
 
 dependencies {
