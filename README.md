@@ -32,6 +32,36 @@ app and a `SYSTEM_ALERT_WINDOW` overlay to block it. Nothing is faked.
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
 
+### Release build (Google Play)
+
+The app ships as `com.vasimakram.focuslock`. That is the `applicationId` only —
+the Kotlin `namespace` stays `com.focuslock.app`, so source packages and imports
+are unchanged.
+
+Signing credentials live outside Git. Copy `keystore.properties.sample` to
+`keystore.properties` and fill in the passwords for the upload keystore:
+
+```bash
+./gradlew :app:bundleRelease     # app/build/outputs/bundle/release/app-release.aab, for Play
+./gradlew :app:assembleRelease   # app/build/outputs/apk/release/app-release.apk, for sideloading
+```
+
+Without `keystore.properties` the build still compiles, but emits
+`app-release-unsigned.apk`, which Android will refuse to install.
+
+Release builds are minified and resource-shrunk by R8, so test them on a device
+before shipping — some breakage only appears after minification. To read an
+obfuscated crash:
+
+```bash
+android-sdk/cmdline-tools/latest/bin/retrace.bat   app/build/outputs/mapping/release/mapping.txt crash.txt
+```
+
+`app/build/outputs/mapping/release/usage.txt` lists what R8 removed, which is
+usually where the cause is.
+
+`versionCode` must increase for every upload to Play.
+
 ## First-run setup on device
 Focus Lock needs these permissions (explained in-app under Onboarding → Permissions):
 1. **Accessibility Service** — detect which app is in the foreground.

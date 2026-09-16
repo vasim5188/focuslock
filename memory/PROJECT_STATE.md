@@ -100,12 +100,18 @@ README and current source; source code remains authoritative when details drift.
   `android-sdk/cmdline-tools/latest/bin/retrace.bat` against
   `app/build/outputs/mapping/release/mapping.txt`; `usage.txt` beside it lists
   what R8 removed.
-- Verified on device on 2026-09-16 with a release APK signed by the local debug
-  key (`apksigner` + `~/.android/debug.keystore`) purely for testing: Home and
-  the app picker render, the app list is complete, and no crash occurs. The
-  user then confirmed the release build works as expected on the device. Re-test
-  once after the first build signed with the real upload key, since that
-  produces a different signing certificate.
+- Verified on device on 2026-09-16. First with a release APK signed by the local
+  debug key (`apksigner` + `~/.android/debug.keystore`) to test R8 before the
+  upload key existed: Home and the app picker rendered, the app list was
+  complete, no crash. Then again with the real upload-key-signed
+  `app-release.apk`, which installed and ran cleanly. The user confirmed the
+  app works as expected.
+- Release builds are produced with `gradlew.bat :app:bundleRelease` (the `.aab`
+  for Play) or `:app:assembleRelease` (a signed APK for sideloading). Without
+  `keystore.properties` the release output is `app-release-unsigned.apk`, which
+  Android refuses to install — "package appears to be invalid" means unsigned,
+  not broken. Sideloading a debug-signed APK is separately blocked by Play
+  Protect; `adb install` bypasses that.
 - Local SDK at `D:/research/focuslock/android-sdk` has Android Platforms 35/36
   and Build Tools 34/35/36. `local.properties` points to that SDK and is ignored
   by Git. The SDK itself and `gradle-dist` are also ignored.
@@ -119,53 +125,81 @@ README and current source; source code remains authoritative when details drift.
   on this update resets old locally selected apps and schedules. The user
   confirmed the unlock-screen flash is fixed and all apps appear in the picker.
 
-## Google Play status and next work
+## Google Play status and next work — 2026-09-16
 
-- The user has a personal Play Console developer account. Identity verification
-  completed and the `Focus Lock` app entry was created on 2026-09-16. Nothing has
-  been uploaded to any track yet; do not claim Focus Lock is published or
-  distributed to testers.
-- Play Console gates the tracks in this order: Internal testing is available
-  immediately; Closed testing stays locked behind the `Finish setting up your
-  app` tasks (store listing plus the App content declarations); production
-  access then needs the closed test. So the listing and declarations are the
-  critical path, not parallel work, because they unlock the 14-day clock.
-- A signed `app-release.aab` (4.0 MB) is built and verified, signed with
-  `CN=Vasim Akram Shaik, O=Focus Lock, L=Hyderabad, ST=Telangana, C=IN`. The
-  upload keystore is `focuslock-upload.jks` at the project root with alias
-  `focuslock-upload`; it and `keystore.properties` are gitignored.
-- Production access requires a closed test with at least 12 testers opted in for
-  at least 14 days. The dashboard showed 0 testers opted in on 2026-09-16. That
-  clock is the schedule's long pole.
-- For friend testing, create the app entry and an Internal testing track after
-  account verification. Internal testing can invite up to 100 testers by Google
-  email and distribute via Play Store opt-in link.
-- Play assets drafted on 2026-09-16 under `play/`: `icon-512.png` (rendered from
-  the adaptive icon's vector path, cropped to the central 72 of 108 so it matches
-  the launcher), `privacy-policy.md`, whose text is also served as
-  `docs/index.html` so GitHub Pages can publish it from `main` at
-  `https://vasim5188.github.io/focuslock/` (Pages serves only a repo's root or
-  `/docs`, and needs a paid plan if the repo is private), `store-listing.md` (name/short/full description, all within Play's limits)
-  `declarations.md` (Accessibility justification plus demo-video script, the
-  specialUse justification, and the Data safety answers), and
-  `feature-graphic-1024x500.png` (same lock path, wordmark and tagline on the
-  app's dark palette; no device frames, ratings or calls to action, which Play
-  prohibits). Both privacy policy
-  files still carry a `SUPPORT_EMAIL` placeholder that must be replaced before
-  hosting; the support address is vasimakram.aem@gmail.com and both the policy
-  page and the Play listing contact can be changed later. Screenshots are still
-  to be produced.
-- Still needed: Play listing
-  text, icon/graphics/screenshots and contact address; public privacy-policy URL;
-  accurate Accessibility service and foreground-service special-use declarations
-  with demonstration videos; Data safety and other App content questionnaires;
-  tester list and rollout. Keep signing credentials out of Git and back them up.
-- The first uploaded bundle permanently binds the Play package name, so
-  `com.vasimakram.focuslock` cannot change after that upload.
-- The app currently has `versionCode = 1` and `versionName = 1.0.0`. Increase
-  versionCode for every subsequent Play upload. A Play-signed install may use a
-  different signing certificate from the existing USB debug APK, so testers
-  might have to uninstall the debug build before their first Play installation.
+### Account, app entry and signing
+
+- Personal Play Console developer account; identity verification complete. The
+  `Focus Lock` app entry was created on 2026-09-16.
+- The Play package name is `com.vasimakram.focuslock`, bound permanently by the
+  first upload and no longer changeable.
+- The upload keystore is `focuslock-upload.jks` at the project root, alias
+  `focuslock-upload`, DN `CN=Vasim Akram Shaik, O=Focus Lock, L=Hyderabad,
+  ST=Telangana, C=IN`. It and `keystore.properties` are gitignored and have
+  never been committed at any point in history — the GitHub repo
+  `vasim5188/focuslock` is public, so that matters. The user must keep an
+  off-machine backup of the `.jks` and its password.
+- Play App Signing is enabled, so builds delivered by Play carry Google's
+  certificate rather than the upload key. Moving between a locally signed build
+  and a Play-delivered one is therefore a fresh install, not an update, and
+  resets Accessibility and overlay grants and all Room data each time.
+
+### Tracks
+
+- An Internal testing release was published on 2026-09-16 with the signed
+  `app-release.aab` (version code 1, 1.0.0, 1.5 MB install size). Three email
+  lists of one tester each exist; consolidate into a single list before closed
+  testing.
+- Two upload warnings are expected and benign. One says the track has no
+  testers. The other reports native code without debug symbols: that is
+  `libdatastore_shared_counter.so` from androidx.datastore across four ABIs,
+  not app code, so it will appear on every upload and can be ignored.
+- Closed testing stays locked until the `Finish setting up your app` tasks are
+  done. Production access then needs at least 12 testers opted in for at least
+  14 continuous days; 0 were opted in on 2026-09-16. That clock is the long
+  pole, and it cannot start until the listing and App content are complete.
+- Internal testing does not count toward the 12-tester requirement, but it
+  takes up to 100 testers immediately and is the right channel for friends.
+- `versionCode` must increase on every subsequent upload.
+
+### Store assets, committed under `play/`
+
+- `icon-512.png` and `feature-graphic-1024x500.png`, both rendered by a small
+  Pillow script that parses `ic_launcher_foreground.xml`'s path data directly
+  and flattens the Béziers, so the artwork matches the installed launcher icon
+  exactly. The icon crops to the central 72 of the 108 adaptive-icon canvas,
+  which is the safe zone the launcher actually shows. The feature graphic
+  deliberately carries no device frames, ratings or calls to action, all of
+  which Play prohibits.
+- `store-listing.md` — app name, short and full descriptions, all verified
+  against Play's character limits (10/30, 78/80, 2063/4000).
+- `declarations.md` — the Accessibility justification, a demo-video shot list,
+  the `specialUse` foreground-service justification and the Data safety
+  answers. The Accessibility text argues why no alternative API works, which is
+  the part reviewers weigh: `UsageStatsManager` reports after the fact and
+  cannot block before content is shown, and Android exposes nothing else that
+  reports a foreground-app change.
+- `privacy-policy.md` — the policy text as Markdown.
+
+### Privacy policy
+
+- Live at `https://vasim5188.github.io/focuslock/`, served from `docs/index.html`
+  by GitHub Pages from `main`. Pages only serves a repo's root or `/docs`, which
+  is why the page does not live under `play/`.
+- Verified at 375px wide with no horizontal overflow and a working `mailto:`
+  link. Contact address is `vasimakram.aem@gmail.com`; both the page and the
+  Play listing contact can be changed later.
+- An in-app copy is not sufficient for Play: App content requires a public URL,
+  because the policy must be readable before installing.
+
+### Still outstanding
+
+- At least 2 phone screenshots; the block screen explains the product fastest.
+- The Accessibility demo video, showing consent obtained before the grant.
+- 12 testers recruited and opted in.
+- The Console forms: Main store listing, then App content end to end.
+- A custom domain was discussed and deliberately deferred; `github.io` is
+  accepted by Play and buying a domain would only delay the 14-day clock.
 
 ## Agreed feature roadmap — 2026-09-15
 
