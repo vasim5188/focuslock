@@ -84,4 +84,4 @@ a new "last updated" date.
 
 Questions about this policy or the app:
 
-**<SUPPORT_EMAIL>**
+**vasimakram.aem@gmail.com**

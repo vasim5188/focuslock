@@ -142,15 +142,19 @@ README and current source; source code remains authoritative when details drift.
   email and distribute via Play Store opt-in link.
 - Play assets drafted on 2026-09-16 under `play/`: `icon-512.png` (rendered from
   the adaptive icon's vector path, cropped to the central 72 of 108 so it matches
-  the launcher), `privacy-policy.md` and a ready-to-host `index.html` of the same
-  text, `store-listing.md` (name/short/full description, all within Play's limits)
+  the launcher), `privacy-policy.md`, whose text is also served as
+  `docs/index.html` so GitHub Pages can publish it from `main` at
+  `https://vasim5188.github.io/focuslock/` (Pages serves only a repo's root or
+  `/docs`, and needs a paid plan if the repo is private), `store-listing.md` (name/short/full description, all within Play's limits)
   `declarations.md` (Accessibility justification plus demo-video script, the
   specialUse justification, and the Data safety answers), and
   `feature-graphic-1024x500.png` (same lock path, wordmark and tagline on the
   app's dark palette; no device frames, ratings or calls to action, which Play
   prohibits). Both privacy policy
   files still carry a `SUPPORT_EMAIL` placeholder that must be replaced before
-  hosting. Screenshots are still to be produced.
+  hosting; the support address is vasimakram.aem@gmail.com and both the policy
+  page and the Play listing contact can be changed later. Screenshots are still
+  to be produced.
 - Still needed: Play listing
   text, icon/graphics/screenshots and contact address; public privacy-policy URL;
   accurate Accessibility service and foreground-service special-use declarations

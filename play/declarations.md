@@ -106,7 +106,7 @@ schedules therefore do not need declaring.
 
 | Item | Answer |
 |---|---|
-| Privacy policy | URL of the hosted `play/index.html` |
+| Privacy policy | `https://vasim5188.github.io/focuslock/` (GitHub Pages, served from `docs/`) |
 | App access | All functionality available without restrictions — no login |
 | Ads | No ads |
 | Content rating | Complete questionnaire; expect Everyone |
