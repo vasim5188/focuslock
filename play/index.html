@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Focus Lock — Privacy Policy</title>
+<style>
+  :root { --bg:#ffffff; --fg:#1b1f24; --muted:#5a6472; --rule:#e3e7ec; --accent:#0e9f76; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#0E1116; --fg:#e6e9ee; --muted:#9aa4b2; --rule:#232a33; --accent:#6BE3B4; }
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg);
+         font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; }
+  .wrap { max-width:720px; margin:0 auto; padding:48px 20px 80px; }
+  h1 { font-size:1.9rem; line-height:1.2; margin:0 0 4px; letter-spacing:-.02em; }
+  h2 { font-size:1.15rem; margin:2.2em 0 .5em; letter-spacing:-.01em; }
+  .date { color:var(--muted); font-size:.9rem; margin-bottom:2.5em; }
+  .lede { border-left:3px solid var(--accent); padding-left:16px; margin:0 0 2em; }
+  p { margin:0 0 1em; }
+  ul { padding-left:1.2em; }
+  li { margin-bottom:.5em; }
+  hr { border:0; border-top:1px solid var(--rule); margin:3em 0 1.5em; }
+  footer { color:var(--muted); font-size:.9rem; }
+  a { color:var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Focus Lock — Privacy Policy</h1>
+  <div class="date">Last updated: 16 September 2026</div>
+
+  <div class="lede">
+    <p><strong>Focus Lock does not collect, transmit, or share any personal data.</strong>
+    It has no accounts, no analytics, no advertising, and no servers. Everything the
+    app stores stays on your device.</p>
+  </div>
+
+  <p>Focus Lock is a focus and app-blocking app for Android, published by Vasim
+  Akram Shaik. This policy explains what the app does with your information.</p>
+
+  <h2>Information we collect</h2>
+  <p><strong>None.</strong> Focus Lock does not collect personal information. We
+  cannot see which apps you block, when you use the app, or anything else about
+  your device. The app has no user accounts and never asks you to sign in.</p>
+
+  <h2>Information stored on your device</h2>
+  <p>Focus Lock stores the following locally, so that it can work:</p>
+  <ul>
+    <li>The apps you have chosen to block, and the time window set for each.</li>
+    <li>Your unlock history: pending waits, temporary unlock grants, and a count
+    of unlocks per day, used to apply escalating wait times.</li>
+    <li>App preferences: your theme choice, whether onboarding is complete, and
+    whether the optional app lock is enabled.</li>
+  </ul>
+  <p>This data never leaves your device. It is not backed up to the cloud —
+  Android backup is explicitly disabled for this app. Uninstalling Focus Lock
+  permanently deletes all of it.</p>
+
+  <h2>Permissions, and why each is needed</h2>
+
+  <p><strong>Accessibility Service.</strong> Focus Lock uses Android's
+  Accessibility Service to detect which app is currently in the foreground. This
+  is the only way an app can tell that you have opened a blocked app so that it
+  can show the blocking screen at the right moment.</p>
+
+  <p>The service reads only the package name of the app in the foreground. It
+  does not read the content of your screen, does not record what you type, does
+  not capture passwords or messages, and does not transmit anything anywhere. No
+  information obtained through the Accessibility Service is collected, stored
+  beyond what is described above, or shared with anyone.</p>
+
+  <p>You grant this permission explicitly in Android Settings, and you can revoke
+  it at any time from Settings &gt; Accessibility, or from within Focus Lock
+  under Permissions.</p>
+
+  <p><strong>Display over other apps.</strong> Used to draw the blocking screen
+  on top of a blocked app. It is shown only while one of your own protected apps
+  is open during a window you configured.</p>
+
+  <p><strong>Notifications and foreground service.</strong> Focus Lock runs a
+  foreground service with an ongoing notification so that Android keeps
+  protection running in the background. Without it, the system may stop the app
+  and blocking would fail.</p>
+
+  <p><strong>Run at startup.</strong> Lets protection resume after you restart
+  your phone.</p>
+
+  <p><strong>Biometric / device credential.</strong> If you turn on the optional
+  app lock, Focus Lock asks Android to verify you using your existing
+  fingerprint, PIN, pattern, or password. Verification is performed entirely by
+  Android. Focus Lock never sees, receives, or stores your biometric data or your
+  PIN — it is told only whether authentication succeeded.</p>
+
+  <h2>Information we share</h2>
+  <p>Nothing. We do not sell, rent, or share data, because we do not collect any.
+  Focus Lock makes no network requests.</p>
+
+  <h2>Children</h2>
+  <p>Focus Lock is not directed at children and we do not knowingly collect any
+  information from anyone, including children.</p>
+
+  <h2>Changes to this policy</h2>
+  <p>If this policy changes, the updated version will be posted at this address
+  with a new "last updated" date.</p>
+
+  <h2>Contact</h2>
+  <p>Questions about this policy or the app:<br>
+  <a href="mailto:SUPPORT_EMAIL">SUPPORT_EMAIL</a></p>
+
+  <hr>
+  <footer>Focus Lock · com.vasimakram.focuslock</footer>
+</div>
+</body>
+</html>
