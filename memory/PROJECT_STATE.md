@@ -160,6 +160,13 @@ README and current source; source code remains authoritative when details drift.
   pole, and it cannot start until the listing and App content are complete.
 - Internal testing does not count toward the 12-tester requirement, but it
   takes up to 100 testers immediately and is the right channel for friends.
+- Newly added testers commonly see "Item not found" after opting in and tapping
+  the download button; on 2026-09-16 it resolved by itself after a wait. It is
+  propagation, not a broken track. The other cause worth checking first is an
+  account mismatch: the opt-in happens in the browser while the download opens
+  the Play Store app, so a tester signed into a different account there gets the
+  same screen. Warn testers to wait and retry rather than give up, since the
+  14-day closed-test clock depends on them staying opted in.
 - `versionCode` must increase on every subsequent upload.
 
 ### Store assets, committed under `play/`
